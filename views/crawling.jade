@@ -20,7 +20,10 @@ block content
         input.form-control.input-email(type='text', placeholder='e.g., game@ddbox.com')
       br
       button#crawling-options.btn.btn-primary Update Options
-      span &emsp; {{updatingOptions}}   
+      span &emsp; 
+      img(ng-if="updatingOptions" src="loading-animal.gif")
+      span(ng-if="updatingOptions") Retrieving options...
+      span {{errorOption}}
       br
       br
       div.form-group
@@ -62,7 +65,9 @@ block content
       button#crawling-start.btn.btn-primary Start Crawling
       span &emsp;
       button#crawling-stop.btn.btn-primary Stop Crawling
-      span &emsp; {{crawlingStatus}}
+      span &emsp; 
+      img(ng-if="crawlingStatus" src="loading-animal.gif")
+      span(ng-if="crawlingStatus") Crawling...
       br    
       br
       button.btn.btn-info(ng-click="getJson()") Start watching JSON Data

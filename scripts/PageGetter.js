@@ -299,7 +299,7 @@ var getPage = function(url, selectIndices, callback, callback2) {
                     			console.log("Page fectching error: " + outcomeObj.error);
                         	}else{
                         		var callbackString = JSON.stringify(outcomeObj.result);
-                        		console.log("Finished loading page: " + callbackString);
+                        		console.log("Finished loading page");
                             	callback(callbackString);	
                         	}                            
                             phInstance.exit();

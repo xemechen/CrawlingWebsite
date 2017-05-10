@@ -8,14 +8,15 @@ app.controller("retrievingCtrl", function($scope) {
 	}
 
 	$scope.select = {};	
-	$scope.updatingOptions = '';
-	$scope.crawlingStatus = '';
+	$scope.updatingOptions = false;
+	$scope.crawlingStatus = false;
 
 	var optionProc = function(returnData, firstLoadingFlag){
 		firstLoadingFlag = firstLoadingFlag == 'success'? false: firstLoadingFlag? firstLoadingFlag:false;
 		prf(returnData);
 		if(returnData){	
-			$scope.updatingOptions = firstLoadingFlag? $scope.updatingOptions:"Successfully";		
+			$scope.errorOption = "";
+			$scope.updatingOptions = firstLoadingFlag? false:true;		
 			$scope.optionData = returnData;	
 			$scope.select.one = 2;
 			$scope.select.two = 2;
@@ -32,7 +33,7 @@ app.controller("retrievingCtrl", function($scope) {
 	        type: 'GET',
 	        url: 'http://127.0.0.1:3000/crawlingOptions',
 	        success: optionProc,
-	        error: function(){$scope.updatingOptions = "Cannot get the data";}
+	        error: function(){$scope.errorOption = "Cannot get the data";}
 	    });
 	});
 	var calling = "";
@@ -74,7 +75,7 @@ app.controller("retrievingCtrl", function($scope) {
 		}
 		prf("Delay second: " + dSecond);
 
-		$scope.crawlingStatus = 'Crawling...';
+		$scope.crawlingStatus = true;
 		$scope.$apply();
 	    $.ajax({
 	        type: 'POST',
@@ -85,7 +86,7 @@ app.controller("retrievingCtrl", function($scope) {
 
 	$('#crawling-stop').click(function() {
 		prf("Calling server to stop crawling");
-		$scope.crawlingStatus = 'Crawling stopped';
+		$scope.crawlingStatus = false;
 		$scope.$apply();
 	    $.ajax({
 	        type: 'GET',
