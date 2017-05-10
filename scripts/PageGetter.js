@@ -306,7 +306,7 @@ var getPage = function(url, selectIndices, callback, callback2) {
                             phInstance.exit();
                             callback2();
                         });
-                    }, 50000 + delayMilSec);
+                    }, 50000 + delayMilSec*2);
                     timeOutList.push(timeout4);
                 };
             });

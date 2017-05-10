@@ -109,11 +109,11 @@ app.controller("retrievingCtrl", function($scope) {
 
 	$scope.summary = {};
 	var calculateSummary = function(list){
+		$scope.summary = {};
 		if(list == null || list.length == 0){
 			return null;
 		}
 		
-		$scope.summary = {};
 		for(var i = 0; i < list.length; i++){
 			var itm = list[i];
 			if($scope.summary[itm.Type] == null){
