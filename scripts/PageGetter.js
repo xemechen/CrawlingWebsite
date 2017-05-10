@@ -190,7 +190,7 @@ var getPage = function(url, selectIndices, callback, callback2) {
                             
                         }, selector, index).then(function(processOutput){
                         	if(processOutput != null){
-                        		console.log(processOutput);	
+                        		console.log("Operation error: " + processOutput);	
                         	}                        	
                         });
                     };
