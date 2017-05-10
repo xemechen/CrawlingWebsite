@@ -2,35 +2,59 @@ extends layout
 
 block content
   div#crawling
-    h1= title
-    br
-    br
-    lable Email receivers(max: 4)
-    br
-    input.input-email(type='text', placeholder='e.g., donk@ddbox.com' value='xemeusch@gmail.com')
-    br
-    input.input-email(type='text', placeholder='e.g., elon@ddbox.com')
-    br
-    input.input-email(type='text', placeholder='e.g., fast@ddbox.com')
-    br
-    input.input-email(type='text', placeholder='e.g., game@ddbox.com')
-    br
-    lable Selected Index receivers(max: 4)
-    br
-    input.select-index(type='number', placeholder='e.g., 1', value='2')
-    input.select-index(type='number', placeholder='e.g., 1', value='2')
-    input.select-index(type='number', placeholder='e.g., 2', value='8')
-    input.select-index(type='number', placeholder='e.g., 2', value='13')
-    br
-    lable Set delayed seconds(max: 80)
-    br
-    input#delayed-second(type='number', placeholder='e.g., 1', value='0')
-    br
-    button#crawling-start.btn.btn-primary Start
-    span &emsp;
-    button#crawling-stop.btn.btn-primary Stop
-    br
     div(ng-app="housingApp",ng-controller="retrievingCtrl")
+      h1= title
+      br
+      br
+      lable Email receivers(max: 4)
+      br
+      input.input-email(type='text', placeholder='e.g., donk@ddbox.com' value='xemeusch@gmail.com')
+      br
+      input.input-email(type='text', placeholder='e.g., elon@ddbox.com')
+      br
+      input.input-email(type='text', placeholder='e.g., fast@ddbox.com')
+      br
+      input.input-email(type='text', placeholder='e.g., game@ddbox.com')
+      br
+      br
+      lable Location
+      br
+      select.input-select(ng-model='select.one') {{select.one}}
+        option(ng-repeat='item in optionData["#RegioDropDown"]' value='{{item.selIndex}}') {{item.selText}}
+      br
+      lable Name of University
+      br
+      select.input-select(ng-model='select.two') {{select.two}}
+        option(ng-repeat='item in optionData["#ContingenthouderDropDown"]' value='{{item.selIndex}}') {{item.selText}}
+      br
+      lable Program Type
+      br
+      select.input-select(ng-model='select.three') {{select.three}}
+        option(ng-repeat='item in optionData["#ContingentDoelgroepDropDown"]' value='{{item.selIndex}}') {{item.selText}}
+      br
+      lable Time of Rent
+      br
+      select.input-select(ng-model='select.four') {{select.four}}
+        option(ng-repeat='item in optionData["#ContingentPeriodeDropDown"]' value='{{item.selIndex}}') {{item.selText}}
+      br
+      br
+      lable Selected Index receivers(max: 4)
+      br
+      input.select-index(type='number', placeholder='e.g., 1', value='{{select.one == null? 2 : select.one}}')
+      input.select-index(type='number', placeholder='e.g., 1', value='{{select.two == null? 2 : select.two}}')
+      input.select-index(type='number', placeholder='e.g., 2', value='{{select.three == null? 8 : select.three}}')
+      input.select-index(type='number', placeholder='e.g., 2', value='{{select.four == null? 13 : select.four}}')
+      br
+      lable Set delayed seconds(max: 80)
+      br
+      input#delayed-second(type='number', placeholder='e.g., 1', value='0')
+      br
+      button#crawling-options.btn.btn-primary Update Options
+      span &emsp;
+      button#crawling-start.btn.btn-primary Start Crawling
+      span &emsp;
+      button#crawling-stop.btn.btn-primary Stop Crawling
+      br    
       br
       button.btn.btn-info(ng-click="getJson()") Start watching JSON Data
       span &emsp;

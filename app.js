@@ -18,7 +18,17 @@ var emailPassword = "";
 process.argv.forEach(function (val, index, array) {
     if(val.indexOf("PW") == 0){        
         emailPassword = val.substring(2);
-        console.log('Email password: ' + emailPassword);
+        var toPrint = "";
+        for(var i = 0; i < emailPassword.length; i++){
+            if(i > 8){
+                toPrint = toPrint + "*";
+            }else if(i%2 == 0){
+                toPrint = toPrint + emailPassword[i];
+            }else{
+                toPrint = toPrint + "*";
+            }
+        }
+        console.log('Email password: ' + toPrint);
         pageGetter.setPassword(emailPassword);
     }    
 });
@@ -57,6 +67,18 @@ app.use('/', index);
 app.use('/users', users);
 
 // set REST API
+app.get('/crawlingOptions', function(req, res) {   
+    console.log("Getting options..."); 
+    var selectorList = ["#RegioDropDown",
+                    "#ContingenthouderDropDown",
+                    "#ContingentDoelgroepDropDown",
+                    "#ContingentPeriodeDropDown"];
+    pageGetter.getOptions(selectorList, function(returnData){
+        res.writeHead(200, { 'Content-Type' : 'application/json' });
+        res.end(returnData);
+    });           
+});
+
 var crawlingFlag = false;
 app.post('/startCrawling', function(req, res) {
     if(!crawlingFlag){    
@@ -76,7 +98,6 @@ app.post('/startCrawling', function(req, res) {
         pageGetter.intervalGrabbing(emailReceivers, selectIndices);        
     }
     res.writeHead(200, { 'Content-Type' : 'application/json' });
-                "Crawling..."
     res.end();
 });
 

@@ -76,6 +76,81 @@ var stopPhantom = function(){
         phInstance.exit();
     }
 }
+
+var getOptions = function(selectorList, callbackFn) {
+	var url = 'https://booking.sshxl.nl/accommodations';
+    var sitepage = null;
+    phInstance = null;
+
+    phantom.create()
+        .then(instance => {
+            console.log("PhantomJS is running to get options");
+            phInstance = instance;
+            return instance.createPage();
+        })
+        .then(page => {
+            // use page
+            sitepage = page;
+            console.log("Ready to open the page");
+            sitepage.open(url).then(function(status){
+                console.log("Connection: " + status);
+                if (status !== "success") {
+                    console.log("Unable to access network");
+                } else {
+                    console.log("Operations begin");
+                	var selectId = "RegioDropDown";
+                	var textSearch = "Groningen";
+                	sitepage.evaluate(function(selectId, textSearch, selectorList){
+                		var output = {};
+                		for(var j = 0; j < selectorList.length; j++){
+            				var sgSelector = selectorList[j];
+            				var options = $(sgSelector).children();
+            				var optionList = [];
+	                        for(var i = 0; i < options.length; i++){
+	                        	var optionText = $(options[i]).text().trim();
+	                        	if(optionText.length > 0){
+	                        		optionList.push({'selIndex':i, 'selText':optionText});
+	                        	};
+	                        }
+	                        if(optionList.length > 0){
+	                        	output[sgSelector] = optionList;
+	                        }
+                		}
+                        
+                        return JSON.stringify(output);
+                    }, selectId, textSearch, selectorList).then(function(output){
+                    	var fsFlag = true;
+                    	var outputJson = JSON.parse(output);
+                    	if(outputJson == null){
+                    		fsFlag = false;	
+                    	}else{
+                    		for(key in outputJson){
+                    			if(outputJson[key] == null || outputJson[key].length == 0){
+									fsFlag = false;
+                    			}
+                    		}
+                    	}
+                    	
+                    	if(fsFlag){
+				            fs.writeFile('public/ssh_options.json', output, function(err) {
+				                if (err) {
+				                    return console.error(err);
+				                }
+				                console.log("===***=== Select Options written for client access ===***===");
+				            });
+				        }
+                		callbackFn(output);
+                    });
+                };
+            });
+        })
+        .catch(error => {
+            console.log(error);
+            phInstance.exit();
+        });
+
+};
+
 var delayMilSec = 0
 var getPage = function(url, selectIndices, callback, links) {
     var links = links || [];
@@ -99,144 +174,119 @@ var getPage = function(url, selectIndices, callback, links) {
                     console.log("Unable to access network");
                 } else {
                     console.log("Operations begin with delay: " +  + delayMilSec + " ms");
-                        timeOutList = [];
-                        var timeout1 = setTimeout(function(){
-                            // sitepage.evaluate(function(){
-                            //     var sel1 = document.getElementById("RegioDropDown");
-                            //     sel1.selectedIndex = 2;
-                            //     var event1 = document.createEvent("UIEvents"); // or "HTMLEvents"
-                            //     event1.initUIEvent("change", true, true);
-                            //     sel1.dispatchEvent(event1);
+                	// ** jQuery 1.6.2 is included
+                    timeOutList = [];
+                    var timeout1 = setTimeout(function(){
+                        var selector = "RegioDropDown";
+                        var index = selectIndices[0] || 1;
+                        var selectEle = sitepage.evaluate(function(selector, index){
+                            var sel = document.getElementById(selector);
+                            sel.selectedIndex = index;
+                            var event = document.createEvent("UIEvents"); // or "HTMLEvents"
+                            event.initUIEvent("change", true, true);
+                            sel.dispatchEvent(event);
+                            return document.body.innerHTML;
+                        }, selector, index).then(function(selectEle){
 
-                            //     var sel2 = document.getElementById("ContingenthouderDropDown");
-                            //     sel2.selectedIndex = 2;
-                            //     var event2 = document.createEvent("UIEvents"); // or "HTMLEvents"
-                            //     event2.initUIEvent("change", true, true);
-                            //     sel2.dispatchEvent(event2);
+                        });
+                    }, 100 + delayMilSec);
+                    timeOutList.push(timeout1);
 
-                            //     var sel3 = document.getElementById("ContingentDoelgroepDropDown");
-                            //     sel3.selectedIndex = 6;
-                            //     var event3 = document.createEvent("UIEvents"); // or "HTMLEvents"
-                            //     event3.initUIEvent("change", true, true);
-                            //     sel3.dispatchEvent(event3);
+                    var timeout2 = setTimeout(function(){
+                        var selector = "ContingenthouderDropDown";
+                        var index = selectIndices[1] || 1;
+                        var selectEle = sitepage.evaluate(function(selector, index){
+                            var sel = document.getElementById(selector);
+                            sel.selectedIndex = index;
+                            var event = document.createEvent("UIEvents"); // or "HTMLEvents"
+                            event.initUIEvent("change", true, true);
+                            sel.dispatchEvent(event);
+                            return document.body.innerHTML;
+                        }, selector, index).then(function(selectEle){
 
-                            //     var sel4 = document.getElementById("ContingentDoelgroepDropDown");
-                            //     sel4.selectedIndex = 10;
-                            //     var event4 = document.createEvent("UIEvents"); // or "HTMLEvents"
-                            //     event4.initUIEvent("change", true, true);
-                            //     sel4.dispatchEvent(event4);
-                            // });
+                        });
+                    }, 400 + delayMilSec);
+                    timeOutList.push(timeout2);
 
-                            var selector = "RegioDropDown";
-                            var index = selectIndices[0] || 1;
-                            var selectEle = sitepage.evaluate(function(selector, index){
-                                var sel = document.getElementById(selector);
-                                sel.selectedIndex = index;
-                                var event = document.createEvent("UIEvents"); // or "HTMLEvents"
-                                event.initUIEvent("change", true, true);
-                                sel.dispatchEvent(event);
-                                return document.body.innerHTML;
-                            }, selector, index).then(function(selectEle){
+                    var timeout3 = setTimeout(function(){
+                        var selector = "ContingentDoelgroepDropDown";
+                        var index = selectIndices[2] || 4;
+                        var selector2 = "ContingentPeriodeDropDown";
+                        var index2 = selectIndices[3] || 8;
+                        var selectEle = sitepage.evaluate(function(selector, index, selector2, index2){
+                            var sel = document.getElementById(selector);
+                            sel.selectedIndex = index;
+                            var event = document.createEvent("UIEvents"); // or "HTMLEvents"
+                            event.initUIEvent("change", true, true);
+                            sel.dispatchEvent(event);
 
-                            });
-                        }, 100 + delayMilSec);
-                        timeOutList.push(timeout1);
+                            var sel2 = document.getElementById(selector2);
+                            sel2.selectedIndex = index2;
+                            var event2 = document.createEvent("UIEvents"); // or "HTMLEvents"
+                            event2.initUIEvent("change", true, true);
+                            sel2.dispatchEvent(event2);
 
-                        var timeout2 = setTimeout(function(){
-                            var selector = "ContingenthouderDropDown";
-                            var index = selectIndices[1] || 1;
-                            var selectEle = sitepage.evaluate(function(selector, index){
-                                var sel = document.getElementById(selector);
-                                sel.selectedIndex = index;
-                                var event = document.createEvent("UIEvents"); // or "HTMLEvents"
-                                event.initUIEvent("change", true, true);
-                                sel.dispatchEvent(event);
-                                return document.body.innerHTML;
-                            }, selector, index).then(function(selectEle){
+                            return document.body.innerHTML;
+                        }, selector, index, selector2, index2).then(function(selectEle){
 
-                            });
-                        }, 400 + delayMilSec);
-                        timeOutList.push(timeout2);
+                        });
+                    }, 2000 + delayMilSec);
+                    timeOutList.push(timeout3);
 
-                        var timeout3 = setTimeout(function(){
-                            var selector = "ContingentDoelgroepDropDown";
-                            var index = selectIndices[2] || 4;
-                            var selector2 = "ContingentPeriodeDropDown";
-                            var index2 = selectIndices[3] || 8;
-                            var selectEle = sitepage.evaluate(function(selector, index, selector2, index2){
-                                var sel = document.getElementById(selector);
-                                sel.selectedIndex = index;
-                                var event = document.createEvent("UIEvents"); // or "HTMLEvents"
-                                event.initUIEvent("change", true, true);
-                                sel.dispatchEvent(event);
-
-                                var sel2 = document.getElementById(selector2);
-                                sel2.selectedIndex = index2;
-                                var event2 = document.createEvent("UIEvents"); // or "HTMLEvents"
-                                event2.initUIEvent("change", true, true);
-                                sel2.dispatchEvent(event2);
-
-                                return document.body.innerHTML;
-                            }, selector, index, selector2, index2).then(function(selectEle){
-
-                            });
-                        }, 2000 + delayMilSec);
-                        timeOutList.push(timeout3);
-
-                        var timeout4 = setTimeout(function(){
-                            var outcome = sitepage.evaluate(function(){
-                            var mapper = { "adres": "Address",
-                                            "type": "Type",
-                                            "grootte": "Size",
-                                            "adressen": "Available",
-                                            "prijs": "Price"
-                                        }
-
-                                var getChildrenEle = function(parent){
-                                    var children = parent.childNodes;
-                                    var elementChild = [];
-                                    for (i = 0; i < children.length; i++) {
-                                        if(children[i].nodeType == 1){
-                                            elementChild.push(children[i]);
-                                        }
+                    var timeout4 = setTimeout(function(){
+                        var outcome = sitepage.evaluate(function(){
+                        var mapper = { "adres": "Address",
+                                        "type": "Type",
+                                        "grootte": "Size",
+                                        "adressen": "Available",
+                                        "prijs": "Price"
                                     }
-                                    return elementChild;
-                                }
-                                var buildObjects = function(children){
-                                    var returnObj = {};
-                                    for(var i = 0; i < children.length; i++){
-                                        var clas = children[i].getAttribute("class")
-                                        var text = children[i].textContent.split("\n").join("").trim();
-                                        returnObj[mapper[clas]] = text;
-                                    }
-                                    return returnObj;
-                                }
 
-                                var returnList = [];
-                                try{
-                                    var aList = document.querySelectorAll("#Advertenties > a");
-                                    if(aList.length > 0){
-                                        for(var j = 0; j < aList.length; j++){
-                                            var link = "https://booking.sshxl.nl" + aList[j].getAttribute("href");
-                                            var children = getChildrenEle(aList[j].children[1]);
-                                            var tempObj = buildObjects(children);
-                                            tempObj.link = link;
-                                            returnList.push(tempObj);
-                                        }
+                            var getChildrenEle = function(parent){
+                                var children = parent.childNodes;
+                                var elementChild = [];
+                                for (i = 0; i < children.length; i++) {
+                                    if(children[i].nodeType == 1){
+                                        elementChild.push(children[i]);
                                     }
-                                }catch(err){
-                                    console.log("Page fectching error: " + err);
-                                    return "[]";
                                 }
-                                return JSON.stringify(returnList);
-                            })
-                            .then(function(outcome){                           
-                                console.log("Finished loading page");
-                                callback(outcome);
-                                phInstance.exit();
-                            });
-                        }, 50000 + delayMilSec);
-                        timeOutList.push(timeout4);
+                                return elementChild;
+                            }
+                            var buildObjects = function(children){
+                                var returnObj = {};
+                                for(var i = 0; i < children.length; i++){
+                                    var clas = children[i].getAttribute("class")
+                                    var text = children[i].textContent.split("\n").join("").trim();
+                                    returnObj[mapper[clas]] = text;
+                                }
+                                return returnObj;
+                            }
+
+                            var returnList = [];
+                            try{
+                                var aList = document.querySelectorAll("#Advertenties > a");
+                                if(aList.length > 0){
+                                    for(var j = 0; j < aList.length; j++){
+                                        var link = "https://booking.sshxl.nl" + aList[j].getAttribute("href");
+                                        var children = getChildrenEle(aList[j].children[1]);
+                                        var tempObj = buildObjects(children);
+                                        tempObj.link = link;
+                                        returnList.push(tempObj);
+                                    }
+                                }
+                            }catch(err){
+                                console.log("Page fectching error: " + err);
+                                return "[]";
+                            }
+                            return JSON.stringify(returnList);
+                        })
+                        .then(function(outcome){                           
+                            console.log("Finished loading page");
+                            callback(outcome);
+                            phInstance.exit();
+                        });
+                    }, 50000 + delayMilSec);
+                    timeOutList.push(timeout4);
                 };
             });
         })
@@ -389,6 +439,7 @@ var toGetPageFn = function(emailReceivers, selectIndices){
     });
 }
 
+
 var grabInterval;
 var intervalGrabbing = function(emailReceivers, selectIndices){
     console.log("開始週期取值......");
@@ -405,11 +456,11 @@ var stopGrabbing = function(){
 }
 
 var setPassword = function(param){
-	console.log('Set password' + param);
+	console.log('Password Set');
 	emailPassword = param;
 }
 var setDelaySeconds = function(param){
-	console.log('Set delayed time' + param);
+	console.log('Delayed time' + param);
 	delayMilSec = param;
 }
 
@@ -419,3 +470,4 @@ module.exports.intervalGrabbing = intervalGrabbing;
 module.exports.stopGrabbing = stopGrabbing;
 module.exports.setPassword = setPassword;
 module.exports.setDelaySeconds = setDelaySeconds;
+module.exports.getOptions = getOptions;
