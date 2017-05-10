@@ -491,7 +491,7 @@ var setPassword = function(param){
 	emailPassword = param;
 }
 var setDelaySeconds = function(param){
-	console.log('Delayed time Set' + param);
+	console.log('Delayed time Set: ' + param);
 	delayMilSec = param;
 }
 
