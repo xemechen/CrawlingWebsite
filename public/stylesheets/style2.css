@@ -1,0 +1,17 @@
+p {
+	font-style: italic;
+}
+
+#crawling p{
+	font-style: normal;
+}
+
+#crawling button.btn {
+	margin-top: 15px;
+	margin-bottom: 3px;
+}
+
+#crawling a {
+    color: #2757b3;
+    font-weight: bold;
+}
