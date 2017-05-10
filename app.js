@@ -380,7 +380,7 @@ var toGetPageFn = function(emailReceivers, selectIndices){
         }        
 
         var checkingResult = dataChecker(jsonObj);
-        if(true){
+        if(checkingResult[0]){
             // checked is true, send email alert
             var emailContent = emailContentBuilder("New room(s) available, please click the following link(s) to check. <br/>", checkingResult[1]);
             sendingBatchGmails("SSH Housing alert! " + checkingResult[2], emailContent, emailReceivers);
