@@ -1,44 +1,51 @@
 extends layout
 
 block content
+  link(rel='stylesheet', href='/stylesheets/style_crawling.css') 
   div#crawling
     div(ng-app="housingApp",ng-controller="retrievingCtrl")
       h1= title
       br
-      br
-      lable Email receivers(max: 4)
-      br
-      input.input-email(type='text', placeholder='e.g., donk@ddbox.com' value='xemeusch@gmail.com')
-      br
-      input.input-email(type='text', placeholder='e.g., elon@ddbox.com')
-      br
-      input.input-email(type='text', placeholder='e.g., fast@ddbox.com')
-      br
-      input.input-email(type='text', placeholder='e.g., game@ddbox.com')
-      br
+      br      
+      div.form-group
+        lable Email receivers(max: 4)
+        br
+        br
+        input.form-control.input-email(type='text', placeholder='e.g., donk@ddbox.com' value='xemeusch@gmail.com')
+        br
+        input.form-control.input-email(type='text', placeholder='e.g., elon@ddbox.com')
+        br
+        input.form-control.input-email(type='text', placeholder='e.g., fast@ddbox.com')
+        br
+        input.form-control.input-email(type='text', placeholder='e.g., game@ddbox.com')
       br
       button#crawling-options.btn.btn-primary Update Options
-      span &emsp;
+      span &emsp; {{updatingOptions}}   
       br
-      lable Location
       br
-      select.input-select(ng-model='select.one') {{select.one}}
-        option(ng-repeat='item in optionData["#RegioDropDown"]' value='{{item.selIndex}}') {{item.selText}}
-      br
-      lable Name of University
-      br
-      select.input-select(ng-model='select.two') {{select.two}}
-        option(ng-repeat='item in optionData["#ContingenthouderDropDown"]' value='{{item.selIndex}}') {{item.selText}}
-      br
-      lable Program Type
-      br
-      select.input-select(ng-model='select.three') {{select.three}}
-        option(ng-repeat='item in optionData["#ContingentDoelgroepDropDown"]' value='{{item.selIndex}}') {{item.selText}}
-      br
-      lable Time of Rent
-      br
-      select.input-select(ng-model='select.four') {{select.four}}
-        option(ng-repeat='item in optionData["#ContingentPeriodeDropDown"]' value='{{item.selIndex}}') {{item.selText}}
+      div.form-group
+        lable Location
+        br
+        select.form-control.input-select(ng-model='select.one') {{select.one}}
+          option(ng-repeat='item in optionData["#RegioDropDown"]' value='{{item.selIndex}}') {{item.selText}}
+      
+      div.form-group
+        lable Name of University
+        br
+        select.form-control.input-select(ng-model='select.two') {{select.two}}
+          option(ng-repeat='item in optionData["#ContingenthouderDropDown"]' value='{{item.selIndex}}') {{item.selText}}
+      
+      div.form-group
+        lable Program Type
+        br
+        select.form-control.input-select(ng-model='select.three') {{select.three}}
+          option(ng-repeat='item in optionData["#ContingentDoelgroepDropDown"]' value='{{item.selIndex}}') {{item.selText}}
+      
+      div.form-group
+        lable Time of Rent
+        br
+        select.form-control.input-select(ng-model='select.four') {{select.four}}
+          option(ng-repeat='item in optionData["#ContingentPeriodeDropDown"]' value='{{item.selIndex}}') {{item.selText}}
       br
       br
       lable Selected Index receivers(max: 4)

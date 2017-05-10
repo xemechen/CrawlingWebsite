@@ -152,8 +152,7 @@ var getOptions = function(selectorList, callbackFn) {
 };
 
 var delayMilSec = 0
-var getPage = function(url, selectIndices, callback, links) {
-    var links = links || [];
+var getPage = function(url, selectIndices, callback, callback2) {
 
     var sitepage = null;
     phInstance = null;
@@ -235,14 +234,17 @@ var getPage = function(url, selectIndices, callback, links) {
 
                     var timeout4 = setTimeout(function(){
                         var outcome = sitepage.evaluate(function(){
-                        var mapper = { "adres": "Address",
+                        	var mapper = { "adres": "Address",
                                         "type": "Type",
                                         "grootte": "Size",
                                         "adressen": "Available",
                                         "prijs": "Price"
-                                    }
+                                    };
 
                             var getChildrenEle = function(parent){
+                            	if(parent == null){
+                            		return [];
+                            	}
                                 var children = parent.childNodes;
                                 var elementChild = [];
                                 for (i = 0; i < children.length; i++) {
@@ -253,6 +255,10 @@ var getPage = function(url, selectIndices, callback, links) {
                                 return elementChild;
                             }
                             var buildObjects = function(children){
+                            	if(children.length == 0){
+                            		return null;
+                            	}
+
                                 var returnObj = {};
                                 for(var i = 0; i < children.length; i++){
                                     var clas = children[i].getAttribute("class")
@@ -263,27 +269,42 @@ var getPage = function(url, selectIndices, callback, links) {
                             }
 
                             var returnList = [];
+                            var returnObj = {'status':'success'};
                             try{
                                 var aList = document.querySelectorAll("#Advertenties > a");
-                                if(aList.length > 0){
+                                if(aList && aList.length > 0){
                                     for(var j = 0; j < aList.length; j++){
                                         var link = "https://booking.sshxl.nl" + aList[j].getAttribute("href");
                                         var children = getChildrenEle(aList[j].children[1]);
                                         var tempObj = buildObjects(children);
-                                        tempObj.link = link;
-                                        returnList.push(tempObj);
+                                        if(tempObj == null){
+
+                                        }else{
+                                        	tempObj.link = link;
+                                        	returnList.push(tempObj);	
+                                        }                                        
                                     }
                                 }
                             }catch(err){
                                 console.log("Page fectching error: " + err);
-                                return "[]";
+                                returnObj.error = err;
+                                returnObj.status = 'error';
                             }
-                            return JSON.stringify(returnList);
+
+                            returnObj.result = returnList;
+
+                            return JSON.stringify(returnObj);
                         })
-                        .then(function(outcome){                           
-                            console.log("Finished loading page");
-                            callback(outcome);
+                        .then(function(outcome){  
+                        	var outcomeObj = JSON.parse(outcome);
+                        	if(outcomeObj.status == 'error'){
+                    			console.log("Page fectching error: " + outcomeObj.error);
+                        	}else{
+                        		console.log("Finished loading page: " + outcomeObj.result);
+                            	callback(JSON.stringify(outcomeObj.result));	
+                        	}                            
                             phInstance.exit();
+                            callback2();
                         });
                     }, 50000 + delayMilSec);
                     timeOutList.push(timeout4);
@@ -351,13 +372,14 @@ var dataChecker = function(newList){
         previousReturnList = newList;
         return [false, HouseLinks];
     }
+    
+    // console.log("Checking for updated housing");
+    // if(previousReturnList == null || previousReturnList.length == 0){
+    //     previousReturnList = newList;
+    //     return [false, HouseLinks];
+    // }
 
     // checking after first time    
-    console.log("Checking for updated housing");
-    if(previousReturnList == null || previousReturnList.length == 0){
-        previousReturnList = newList;
-        return [false, HouseLinks];
-    }
     
     var previousSummary = calculateSummary(previousReturnList);
     var newSummary = calculateSummary(newList);
@@ -387,6 +409,9 @@ var toGetPageFn = function(emailReceivers, selectIndices){
     console.log("");
     console.log("開始讀取......");
     getPage('https://booking.sshxl.nl/accommodations', selectIndices, function(outcome) {
+    	if(outcome == null){
+    		return console.error("Error getting data from the page");
+    	}
         var jsonObj = JSON.parse(outcome);
         console.log("Total " + jsonObj.length + " items found.");
         if(emailReceivers == null || emailReceivers.length == 1 || typeof emailReceivers == 'string'){
@@ -436,18 +461,24 @@ var toGetPageFn = function(emailReceivers, selectIndices){
             });
         }        
         
-    });
+    }, toGetPageFnGlobal);
+}
+var emailReceiversGlobal, selectIndicesGlobal;
+var toGetPageFnGlobal = function(){
+	toGetPageFn(emailReceiversGlobal, selectIndicesGlobal);
 }
 
 
 var grabInterval;
 var intervalGrabbing = function(emailReceivers, selectIndices){
-    console.log("開始週期取值......");
+    console.log("開始週期取值......with delay " + delayMilSec);
+    emailReceiversGlobal = emailReceivers;
+    selectIndicesGlobal = selectIndices;
     toGetPageFn(emailReceivers, selectIndices);
 
-    grabInterval = setInterval(function(){
-        toGetPageFn(emailReceivers, selectIndices);
-    }, 90000 + delayMilSec);
+    // grabInterval = setInterval(function(){
+    //     toGetPageFn(emailReceivers, selectIndices);
+    // }, 90000 + delayMilSec);
 };
 var stopGrabbing = function(){
 	console.log("停止週期取值......");
@@ -460,7 +491,7 @@ var setPassword = function(param){
 	emailPassword = param;
 }
 var setDelaySeconds = function(param){
-	console.log('Delayed time' + param);
+	console.log('Delayed time Set' + param);
 	delayMilSec = param;
 }
 

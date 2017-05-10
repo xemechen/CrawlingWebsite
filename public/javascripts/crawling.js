@@ -8,10 +8,13 @@ app.controller("retrievingCtrl", function($scope) {
 	}
 
 	$scope.select = {};	
+	$scope.updatingOptions = '';
 
-	var optionProc = function(returnData){
+	var optionProc = function(returnData, firstLoadingFlag){
+		firstLoadingFlag = firstLoadingFlag == 'success'? false: firstLoadingFlag? firstLoadingFlag:false;
 		prf(returnData);
-		if(returnData){			
+		if(returnData){	
+			$scope.updatingOptions = firstLoadingFlag? $scope.updatingOptions:"Successfully";		
 			$scope.optionData = returnData;	
 			$scope.select.one = 2;
 			$scope.select.two = 2;
@@ -22,10 +25,13 @@ app.controller("retrievingCtrl", function($scope) {
 	}
 
 	$('#crawling-options').click(function() {
+		$scope.updatingOptions = "Retrieving options...";
+		$scope.$apply();
 		$.ajax({
 	        type: 'GET',
 	        url: 'http://127.0.0.1:3000/crawlingOptions',
-	        success: optionProc
+	        success: optionProc,
+	        error: function(){$scope.updatingOptions = "Cannot get the data";}
 	    });
 	});
 	var calling = "";
@@ -158,7 +164,7 @@ app.controller("retrievingCtrl", function($scope) {
 		    url: "ssh_options.json",
 		    mimeType: "application/json",
 		    success: function(result){			
-			    optionProc(result);
+			    optionProc(result, true);
 		    }
 		});		
 	}
