@@ -9,6 +9,7 @@ app.controller("retrievingCtrl", function($scope) {
 
 	$scope.select = {};	
 	$scope.updatingOptions = '';
+	$scope.crawlingStatus = '';
 
 	var optionProc = function(returnData, firstLoadingFlag){
 		firstLoadingFlag = firstLoadingFlag == 'success'? false: firstLoadingFlag? firstLoadingFlag:false;
@@ -73,6 +74,8 @@ app.controller("retrievingCtrl", function($scope) {
 		}
 		prf("Delay second: " + dSecond);
 
+		$scope.crawlingStatus = 'Crawling...';
+		$scope.$apply();
 	    $.ajax({
 	        type: 'POST',
 	        url: 'http://127.0.0.1:3000/startCrawling',
@@ -82,6 +85,8 @@ app.controller("retrievingCtrl", function($scope) {
 
 	$('#crawling-stop').click(function() {
 		prf("Calling server to stop crawling");
+		$scope.crawlingStatus = 'Crawling stopped';
+		$scope.$apply();
 	    $.ajax({
 	        type: 'GET',
 	        url: 'http://127.0.0.1:3000/stopCrawling'
@@ -113,7 +118,7 @@ app.controller("retrievingCtrl", function($scope) {
 		if(list == null || list.length == 0){
 			return null;
 		}
-		
+
 		for(var i = 0; i < list.length; i++){
 			var itm = list[i];
 			if($scope.summary[itm.Type] == null){

@@ -173,25 +173,37 @@ var getPage = function(url, selectIndices, callback, callback2) {
                     console.log("Unable to access network");
                 } else {
                     console.log("Operations begin with delay: " +  + delayMilSec + " ms");
+                    // create selecting function
+                    var selecting = function(selector, index){
+                        var selectEle = sitepage.evaluate(function(selector, index){
+                        	try{
+                        		var sel = document.getElementById(selector);
+	                            sel.selectedIndex = index;
+	                            var event = document.createEvent("UIEvents"); // or "HTMLEvents"
+	                            event.initUIEvent("change", true, true);
+	                            sel.dispatchEvent(event);
+	                            return null;
+	                            // return document.body.innerHTML;	
+                        	}catch(err){
+                        		return err;
+                        	}
+                            
+                        }, selector, index).then(function(processOutput){
+                        	if(processOutput != null){
+                        		console.log(processOutput);	
+                        	}                        	
+                        });
+                    };
+
                 	// ** jQuery 1.6.2 is included
                     timeOutList = [];
                     var timeout1 = setTimeout(function(){
-                        var selector = "RegioDropDown";
-                        var index = selectIndices[0] || 1;
-                        var selectEle = sitepage.evaluate(function(selector, index){
-                            var sel = document.getElementById(selector);
-                            sel.selectedIndex = index;
-                            var event = document.createEvent("UIEvents"); // or "HTMLEvents"
-                            event.initUIEvent("change", true, true);
-                            sel.dispatchEvent(event);
-                            return document.body.innerHTML;
-                        }, selector, index).then(function(selectEle){
-
-                        });
+                    	selecting("RegioDropDown", selectIndices[0] || 1)	
                     }, 100 + delayMilSec);
                     timeOutList.push(timeout1);
 
                     var timeout2 = setTimeout(function(){
+                    	selecting("ContingenthouderDropDown", selectIndices[1] || 1);
                         var selector = "ContingenthouderDropDown";
                         var index = selectIndices[1] || 1;
                         var selectEle = sitepage.evaluate(function(selector, index){
@@ -208,27 +220,8 @@ var getPage = function(url, selectIndices, callback, callback2) {
                     timeOutList.push(timeout2);
 
                     var timeout3 = setTimeout(function(){
-                        var selector = "ContingentDoelgroepDropDown";
-                        var index = selectIndices[2] || 4;
-                        var selector2 = "ContingentPeriodeDropDown";
-                        var index2 = selectIndices[3] || 8;
-                        var selectEle = sitepage.evaluate(function(selector, index, selector2, index2){
-                            var sel = document.getElementById(selector);
-                            sel.selectedIndex = index;
-                            var event = document.createEvent("UIEvents"); // or "HTMLEvents"
-                            event.initUIEvent("change", true, true);
-                            sel.dispatchEvent(event);
-
-                            var sel2 = document.getElementById(selector2);
-                            sel2.selectedIndex = index2;
-                            var event2 = document.createEvent("UIEvents"); // or "HTMLEvents"
-                            event2.initUIEvent("change", true, true);
-                            sel2.dispatchEvent(event2);
-
-                            return document.body.innerHTML;
-                        }, selector, index, selector2, index2).then(function(selectEle){
-
-                        });
+                    	selecting("ContingentDoelgroepDropDown", selectIndices[2] || 1);
+                    	selecting("ContingentPeriodeDropDown", selectIndices[3] || 1);
                     }, 2000 + delayMilSec);
                     timeOutList.push(timeout3);
 
@@ -271,6 +264,11 @@ var getPage = function(url, selectIndices, callback, callback2) {
                             var returnList = [];
                             var returnObj = {'status':'success'};
                             try{
+                            	if(document.querySelectorAll("#Advertenties").length == 0){
+                            		returnObj.status = 'error';
+                            		returnObj.error = "No results found";
+                            		return JSON.stringify(returnObj);
+                            	}
                                 var aList = document.querySelectorAll("#Advertenties > a");
                                 if(aList && aList.length > 0){
                                     for(var j = 0; j < aList.length; j++){
@@ -300,8 +298,9 @@ var getPage = function(url, selectIndices, callback, callback2) {
                         	if(outcomeObj.status == 'error'){
                     			console.log("Page fectching error: " + outcomeObj.error);
                         	}else{
-                        		console.log("Finished loading page: " + outcomeObj.result);
-                            	callback(JSON.stringify(outcomeObj.result));	
+                        		var callbackString = JSON.stringify(outcomeObj.result);
+                        		console.log("Finished loading page: " + callbackString);
+                            	callback(callbackString);	
                         	}                            
                             phInstance.exit();
                             callback2();
