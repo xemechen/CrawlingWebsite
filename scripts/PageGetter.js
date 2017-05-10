@@ -189,7 +189,7 @@ var getPage = function(url, selectIndices, callback, callback2) {
                         	}
                             
                         }, selector, index).then(function(processOutput){
-                        	if(processOutput != null){
+                        	if(processOutput != null && processOutput.length > 0){
                         		console.log("Operation error: " + processOutput);	
                         	}                        	
                         });
