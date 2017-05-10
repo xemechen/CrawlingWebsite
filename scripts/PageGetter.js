@@ -452,7 +452,7 @@ var toGetPageFn = function(emailReceivers, selectIndices){
         }
 
         // write for client access
-        if(jsonObj.length > 0){
+        if(jsonObj){
             fs.writeFile('public/ssh_result.json', outcome, function(err) {
                 if (err) {
                     return console.error(err);
