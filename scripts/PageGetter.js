@@ -472,6 +472,7 @@ var toGetPageFnGlobal = function(){
 var grabInterval;
 var intervalGrabbing = function(emailReceivers, selectIndices){
     console.log("開始週期取值......with delay " + delayMilSec);
+    firstTimeFlag = true;
     emailReceiversGlobal = emailReceivers;
     selectIndicesGlobal = selectIndices;
     toGetPageFn(emailReceivers, selectIndices);
