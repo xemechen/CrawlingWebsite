@@ -89,9 +89,9 @@ var getOptions = function(selectorList, callbackFn) {
             return instance.createPage();
         })
         .then(page => {
-            // use page
+        	// use page
             sitepage = page;
-            console.log("Ready to open the page");
+            console.log("Ready to open the page");            
             sitepage.open(url).then(function(status){
                 console.log("Connection: " + status);
                 if (status !== "success") {
@@ -167,11 +167,58 @@ var getPage = function(url, selectIndices, callback, callback2) {
             // use page
             sitepage = page;
             console.log("Ready to open the page");
+
+            // create waiting function
+        	var waitFour = function (testFx, conditionOperation, onReady, maxWait, start) {
+				var start = start || new Date().getTime();
+				var duration = new Date().getTime() - start;
+				if (duration < maxWait) {
+					testFx(function(result) {
+						if (result) {
+							console.log("Waited for " + duration + " ms");
+							onReady();
+						} else {
+							setTimeout(function() {
+								waitFour(testFx, conditionOperation, onReady, maxWait, start)
+							}, 250)
+						}
+					}, conditionOperation);
+				} else {
+					console.error('page timed out');
+					phInstance.exit();					
+					callback2();
+				}
+			}
+			var testing = function(cbTest, conditionOperation){
+				var testingResult = false;				
+				sitepage.evaluate(function(paramA, paramB, conditionOperation){
+                	try{
+                		// testing HTML DOM                		
+                		if(conditionOperation()){
+                			return "successful";
+                		}else{
+                			return "";
+                		}
+                	}catch(err){
+                		return "";
+                	}                    
+                }, "", "", conditionOperation).then(function(processOutput){
+                	if(processOutput == "successful"){
+                		testingResult = true;
+                		console.log("waitFor testing Done");
+                	}else{
+                		console.log("Still waiting...");
+                	}
+                	cbTest(testingResult);
+                });				
+			};
+
             sitepage.open(url).then(function(status){
                 console.log("Connection: " + status);
                 if (status !== "success") {
                     console.log("Unable to access network");
                 } else {
+                	// ** jQuery 1.6.2 is included
                     console.log("Operations begin with delay: " +  + delayMilSec + " ms");
                     // create selecting function
                     var selecting = function(selector, index){
@@ -195,7 +242,105 @@ var getPage = function(url, selectIndices, callback, callback2) {
                         });
                     };
 
-                	// ** jQuery 1.6.2 is included
+                	selecting("RegioDropDown", selectIndices[0] || 1);	
+                	selecting("ContingenthouderDropDown", selectIndices[1] || 1);
+                	selecting("ContingentDoelgroepDropDown", selectIndices[2] || 1);
+                	selecting("ContingentPeriodeDropDown", selectIndices[3] || 1);
+
+                	var ttst = function(){
+						return document.querySelectorAll("#Advertenties > a").length > 0;
+					};
+                    waitFour(testing, ttst, function(){
+                    	// callback function when page is loaded
+                    	console.log("Calling onReady function");
+                    	sitepage.evaluate(function(){
+                        	var mapper = { "adres": "Address",
+                                        "type": "Type",
+                                        "grootte": "Size",
+                                        "adressen": "Available",
+                                        "prijs": "Price"
+                                    };
+
+                            var getChildrenEle = function(parent){
+                            	if(parent == null){
+                            		return [];
+                            	}
+                                var children = parent.childNodes;
+                                var elementChild = [];
+                                for (i = 0; i < children.length; i++) {
+                                    if(children[i].nodeType == 1){
+                                        elementChild.push(children[i]);
+                                    }
+                                }
+                                return elementChild;
+                            }
+                            var buildObjects = function(children){
+                            	if(children.length == 0){
+                            		return null;
+                            	}
+
+                                var returnObj = {};
+                                for(var i = 0; i < children.length; i++){
+                                    var clas = children[i].getAttribute("class")
+                                    var text = children[i].textContent.split("\n").join("").trim();
+                                    returnObj[mapper[clas]] = text;
+                                }
+                                return returnObj;
+                            }
+
+                            var returnList = [];
+                            var returnObj = {'status':'success'};
+                            try{
+                            	if(document.querySelectorAll("#Advertenties").length == 0){
+                            		returnObj.status = 'error';
+                            		returnObj.error = "No results found";
+                            		return JSON.stringify(returnObj);
+                            	}
+                                var aList = document.querySelectorAll("#Advertenties > a");
+                                if(aList && aList.length > 0){
+                                    for(var j = 0; j < aList.length; j++){
+                                        var link = "https://booking.sshxl.nl" + aList[j].getAttribute("href");
+                                        var children = getChildrenEle(aList[j].children[1]);
+                                        var tempObj = buildObjects(children);
+                                        if(tempObj == null){
+
+                                        }else{
+                                        	tempObj.link = link;
+                                        	returnList.push(tempObj);	
+                                        }                                        
+                                    }
+                                }
+                            }catch(err){
+                                console.log("Page fectching error: " + err);
+                                returnObj.error = err;
+                                returnObj.status = 'error';
+                            }
+
+                            returnObj.result = returnList;
+
+                            return JSON.stringify(returnObj);
+                        })
+                        .then(function(outcome){  
+                        	var outcomeObj = JSON.parse(outcome);
+                        	if(outcomeObj.status == 'error'){
+                    			console.log("Page fectching error: " + outcomeObj.error);
+                        	}else{
+                        		var callbackString = JSON.stringify(outcomeObj.result);
+                        		console.log("Finished loading page");
+                            	callback(callbackString);	
+                        	}                            
+                            phInstance.exit();
+
+                            timeOutList = [];
+                            var finalTO = setTimeout(function(){
+                            	callback2();
+                            }, delayMilSec);
+                            timeOutList.push(finalTO);
+                        });
+                    }, 90000 + delayMilSec);
+
+                	
+                    /*
                     timeOutList = [];
                     var timeout1 = setTimeout(function(){
                     	selecting("RegioDropDown", selectIndices[0] || 1)	
@@ -204,18 +349,6 @@ var getPage = function(url, selectIndices, callback, callback2) {
 
                     var timeout2 = setTimeout(function(){
                     	selecting("ContingenthouderDropDown", selectIndices[1] || 1);
-                        var selector = "ContingenthouderDropDown";
-                        var index = selectIndices[1] || 1;
-                        var selectEle = sitepage.evaluate(function(selector, index){
-                            var sel = document.getElementById(selector);
-                            sel.selectedIndex = index;
-                            var event = document.createEvent("UIEvents"); // or "HTMLEvents"
-                            event.initUIEvent("change", true, true);
-                            sel.dispatchEvent(event);
-                            return document.body.innerHTML;
-                        }, selector, index).then(function(selectEle){
-
-                        });
                     }, 400 + delayMilSec);
                     timeOutList.push(timeout2);
 
@@ -307,6 +440,7 @@ var getPage = function(url, selectIndices, callback, callback2) {
                         });
                     }, 50000 + delayMilSec*2);
                     timeOutList.push(timeout4);
+                    */
                 };
             });
         })
