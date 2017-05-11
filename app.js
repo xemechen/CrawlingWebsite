@@ -98,7 +98,7 @@ app.post('/startCrawling', function(req, res) {
         pageGetter.intervalGrabbing(emailReceivers, selectIndices);        
     }
     res.writeHead(200, { 'Content-Type' : 'application/json' });
-    res.end();
+    res.end('[]');
 });
 
 app.get('/stopCrawling', function(req, res) {
@@ -110,7 +110,7 @@ app.get('/stopCrawling', function(req, res) {
     }	
     res.writeHead(200, { 'Content-Type' : 'application/json' });
                 "Crawling stopped..."
-    res.end();
+    res.end('[]');
 });
 
 // catch 404 and forward to error handler

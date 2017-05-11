@@ -12,11 +12,12 @@ app.controller("retrievingCtrl", function($scope) {
 	$scope.crawlingStatus = false;
 
 	var optionProc = function(returnData, firstLoadingFlag){
+		crawlingFlag = true;
 		firstLoadingFlag = firstLoadingFlag == 'success'? false: firstLoadingFlag? firstLoadingFlag:false;
 		prf(returnData);
 		if(returnData){	
 			$scope.errorOption = "";
-			$scope.updatingOptions = firstLoadingFlag? false:true;		
+			$scope.updatingOptions = false;		
 			$scope.optionData = returnData;	
 			$scope.select.one = 2;
 			$scope.select.two = 2;
@@ -26,72 +27,88 @@ app.controller("retrievingCtrl", function($scope) {
 		}
 	}
 
+	var crawlingFlag = true;
 	$('#crawling-options').click(function() {
-		$scope.updatingOptions = "Retrieving options...";
-		$scope.$apply();
-		$.ajax({
-	        type: 'GET',
-	        url: 'http://127.0.0.1:3000/crawlingOptions',
-	        success: optionProc,
-	        error: function(){$scope.errorOption = "Cannot get the data";}
-	    });
+		if(crawlingFlag){
+			crawlingFlag = false;
+			$scope.updatingOptions = true;
+			$scope.$apply();
+			$.ajax({
+		        type: 'GET',
+		        url: 'http://127.0.0.1:3000/crawlingOptions',
+		        success: optionProc,
+		        error: function(){$scope.errorOption = "Cannot get the data"; crawlingFlag = true; $scope.$apply();}
+		    });
+		}
 	});
 	var calling = "";
 	$('#crawling-start').click(function() {
-		prf("Calling server to start crawling");
-		// process receivers
-		var emails = $(".input-email");
-		var receivers = [""]; // leading text
-		for(var i = 0; i < emails.length; i++){
-			var email = $(emails[i]).val();
-			if(email != null && email.trim().length > 0 && receivers.indexOf(email.trim()) == -1){
-				receivers.push(email.trim());
+		if(crawlingFlag){
+			crawlingFlag = false;
+			prf("Calling server to start crawling");
+			// process receivers
+			var emails = $(".input-email");
+			var receivers = [""]; // leading text
+			for(var i = 0; i < emails.length; i++){
+				var email = $(emails[i]).val();
+				if(email != null && email.trim().length > 0 && receivers.indexOf(email.trim()) == -1){
+					receivers.push(email.trim());
+				}
 			}
-		}
-		prf(receivers);
+			prf(receivers);
 
-		var dataObj = {
-			'emails': receivers, 'ProcessTime': new Date()
-		};
+			var dataObj = {
+				'emails': receivers, 'ProcessTime': new Date()
+			};
 
-		// process index
-		var indices = $(".select-index");
-		var procIndices = [];
-		for(var i = 0; i < indices.length; i++){
-			var ind = $(indices[i]).val();
-			if(ind != null){
-				procIndices.push(ind);
+			// process index
+			var indices = $(".select-index");
+			var procIndices = [];
+			for(var i = 0; i < indices.length; i++){
+				var ind = $(indices[i]).val();
+				if(ind != null){
+					procIndices.push(ind);
+				}
 			}
-		}
-		prf(procIndices);
-		if(procIndices.length == indices.length){
-			dataObj.indices = procIndices;
-		}
+			prf(procIndices);
+			if(procIndices.length == indices.length){
+				dataObj.indices = procIndices;
+			}
 
-		// process delayed second
-		var dSecond = $("#delayed-second").val();
-		if(dSecond != null && dSecond >= 0){
-			dataObj.dSecond = dSecond;
-		}
-		prf("Delay second: " + dSecond);
+			// process delayed second
+			var dSecond = $("#delayed-second").val();
+			if(dSecond != null && dSecond >= 0){
+				dataObj.dSecond = dSecond;
+			}
+			prf("Delay second: " + dSecond);
 
-		$scope.crawlingStatus = true;
-		$scope.$apply();
-	    $.ajax({
-	        type: 'POST',
-	        url: 'http://127.0.0.1:3000/startCrawling',
-	        data: dataObj
-	    });
+			$scope.crawlingStatus = true;
+			$scope.$apply();
+		    $.ajax({
+		        type: 'POST',
+		        url: 'http://127.0.0.1:3000/startCrawling',
+		        data: dataObj,
+		        success: function(a, b, c){
+		        	crawlingFlag = true;
+		        }
+		    });
+		}
 	});
 
 	$('#crawling-stop').click(function() {
-		prf("Calling server to stop crawling");
-		$scope.crawlingStatus = false;
-		$scope.$apply();
-	    $.ajax({
-	        type: 'GET',
-	        url: 'http://127.0.0.1:3000/stopCrawling'
-	    });
+		if(crawlingFlag){
+			crawlingFlag = false;
+			prf("Calling server to stop crawling");
+			$scope.crawlingStatus = false;
+			$scope.$apply();
+		    $.ajax({
+		        type: 'GET',
+		        url: 'http://127.0.0.1:3000/stopCrawling',
+		        success: function(){
+		        	crawlingFlag = true;
+		        }
+		    });
+		}
 	});
 
     var extractProperty = function(list, fieldName){
