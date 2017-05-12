@@ -217,6 +217,10 @@ var getPage = function(url, selectIndices, callback, callback2) {
                 console.log("Connection: " + status);
                 if (status !== "success") {
                     console.log("Unable to access network");
+                    var finalTO = setTimeout(function(){
+                    	callback2();
+                    }, delayMilSec);
+                    timeOutList.push(finalTO);
                 } else {
                 	// ** jQuery 1.6.2 is included
                     console.log("Operations begin with delay: " +  + delayMilSec + " ms");

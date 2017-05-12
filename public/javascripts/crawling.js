@@ -1,5 +1,6 @@
 'use strict'
 console.log("In the page of crawling");
+var connectionDomain = window.location.host;
 
 var app = angular.module("housingApp", []); 
 app.controller("retrievingCtrl", function($scope) {
@@ -28,21 +29,25 @@ app.controller("retrievingCtrl", function($scope) {
 	}
 
 	var crawlingFlag = true;
-	$('#crawling-options').click(function() {
+	$scope.updateOptions = function() {
 		if(crawlingFlag){
 			crawlingFlag = false;
 			$scope.updatingOptions = true;
-			$scope.$apply();
 			$.ajax({
 		        type: 'GET',
-		        url: 'http://127.0.0.1:3000/crawlingOptions',
+		        url: 'http://'+connectionDomain+'/crawlingOptions',
 		        success: optionProc,
-		        error: function(){$scope.errorOption = "Cannot get the data"; crawlingFlag = true; $scope.$apply();}
+		        error: function(){
+		        	$scope.errorOption = "Cannot get the data"; 
+		        	crawlingFlag = true; 
+		        	$scope.updatingOptions = false;
+		        	$scope.$apply();
+		        }
 		    });
 		}
-	});
+	};
 	var calling = "";
-	$('#crawling-start').click(function() {
+	$scope.startCrawling = function() {
 		if(crawlingFlag){
 			crawlingFlag = false;
 			prf("Calling server to start crawling");
@@ -83,33 +88,42 @@ app.controller("retrievingCtrl", function($scope) {
 			prf("Delay second: " + dSecond);
 
 			$scope.crawlingStatus = true;
-			$scope.$apply();
 		    $.ajax({
 		        type: 'POST',
-		        url: 'http://127.0.0.1:3000/startCrawling',
+		        url: 'http://'+connectionDomain+'/startCrawling',
 		        data: dataObj,
 		        success: function(a, b, c){
-		        	crawlingFlag = true;
+		        },
+		        error: function(){
+		        	crawlingFlag = true; 
+		        	$scope.crawlingStatus = false;
+		        	$scope.$apply();
 		        }
 		    });
 		}
-	});
+	};
 
-	$('#crawling-stop').click(function() {
-		if(crawlingFlag){
+	$scope.stopCrawling = function() {
+		if(!crawlingFlag){
 			crawlingFlag = false;
 			prf("Calling server to stop crawling");
 			$scope.crawlingStatus = false;
-			$scope.$apply();
 		    $.ajax({
 		        type: 'GET',
-		        url: 'http://127.0.0.1:3000/stopCrawling',
+		        url: 'http://'+connectionDomain+'/stopCrawling',
 		        success: function(){
 		        	crawlingFlag = true;
+		        	$scope.crawlingStatus = false;
+		        	$scope.$apply();
+		        },
+		        error: function(){
+		        	crawlingFlag = false; 
+		        	$scope.crawlingStatus = false;
+		        	$scope.$apply();
 		        }
 		    });
 		}
-	});
+	};
 
     var extractProperty = function(list, fieldName){
 		var toReturn = [];
@@ -161,6 +175,34 @@ app.controller("retrievingCtrl", function($scope) {
 		});		
 	}
 	$scope.result = [];
+
+	$scope.crawlingButton = true;
+	$scope.submitPass = function(){
+		if($scope.passcode && $scope.passcode.trim().length > 0){
+			prf($scope.passcode.trim());
+			$.ajax({
+			    type: 'POST',
+		        url: 'http://'+connectionDomain+'/submitPass',
+		        data: {'passcode': $scope.passcode.trim()},
+		        success: function(a, b, c){
+		        	$scope.crawlingButton = true;
+		        	$scope.$apply();
+		        }
+			});		
+		}
+	}
+
+	$scope.checkPass = function(){
+		$.ajax({
+		    type: 'GET',
+	        url: 'http://'+connectionDomain+'/submitPass',
+	        success: function(a, b, c){
+	        	$scope.crawlingButton = true;
+	        	$scope.$apply();
+	        }
+		});		
+	}
+
 	var jsonIntval;
 	$scope.getJson = function(){
 		console.log("Start getting JSON");
@@ -181,7 +223,7 @@ app.controller("retrievingCtrl", function($scope) {
 		console.log("Stop getting JSON");
 	}
 
-	var ajaxToGetOptions = function(){
+	$scope.ajaxToGetOptions = function(){
 		$.ajax({
 		    dataType: "json",
 		    url: "ssh_options.json",
@@ -192,6 +234,7 @@ app.controller("retrievingCtrl", function($scope) {
 		});		
 	}
 	
-	ajaxToGetOptions();
+	$scope.checkPass();
+	$scope.ajaxToGetOptions();
 	ajaxToGetJSON();
 });

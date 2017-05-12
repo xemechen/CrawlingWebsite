@@ -14,6 +14,7 @@ var pageGetter = require('./scripts/PageGetter');
 var app = express();
 
 var emailPassword = "";
+var tempPasscode = "";
 // getting password to send email from cmd argument "PW[password]"
 process.argv.forEach(function (val, index, array) {
     if(val.indexOf("PW") == 0){        
@@ -30,6 +31,10 @@ process.argv.forEach(function (val, index, array) {
         }
         console.log('Email password: ' + toPrint);
         pageGetter.setPassword(emailPassword);
+    }    
+    if(val.indexOf("PC") == 0){        
+        tempPasscode = val.substring(2);
+        console.log('Access passcode: ' + tempPasscode);
     }    
 });
 
@@ -66,51 +71,102 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', index);
 app.use('/users', users);
 
+var connectionPool = {'127.0.0.1:3000':false}; // e.g., {'52.32.108.109'}:true
 // set REST API
-app.get('/crawlingOptions', function(req, res) {   
-    console.log("Getting options..."); 
-    var selectorList = ["#RegioDropDown",
-                    "#ContingenthouderDropDown",
-                    "#ContingentDoelgroepDropDown",
-                    "#ContingentPeriodeDropDown"];
-    pageGetter.getOptions(selectorList, function(returnData){
+var checkingConnection= function(reqParam){
+    var connectionKey = reqParam.headers.host;
+    console.log(connectionKey);
+    if(connectionPool[connectionKey]){
+        return true;
+    }
+    return false;
+}
+app.post('/submitPass', function(req, res) {    
+    var connectionKey = req.headers.host;
+    var inputPasscode = req.body.passcode;
+    console.log(connectionKey);
+    console.log(inputPasscode);
+    if(tempPasscode == inputPasscode){
+        console.log("Passcode correct!");
+        connectionPool[connectionKey] = true;
         res.writeHead(200, { 'Content-Type' : 'application/json' });
-        res.end(returnData);
-    });           
+        res.end('[]');
+    }else{
+        connectionPool[connectionKey] = false;
+        res.writeHead(404, { 'Content-Type' : 'application/json' });
+        res.end('[]');
+    }
+});
+
+app.get('/submitPass', function(req, res) {   
+    if(checkingConnection(req)){
+        res.writeHead(200, { 'Content-Type' : 'application/json' });
+        res.end('[]');
+    }else{
+        res.writeHead(404, { 'Content-Type' : 'application/json' });
+        res.end('[]');
+    }
+});
+
+app.get('/crawlingOptions', function(req, res) {   
+    if(checkingConnection(req)){
+        console.log("Getting options..."); 
+        var selectorList = ["#RegioDropDown",
+                        "#ContingenthouderDropDown",
+                        "#ContingentDoelgroepDropDown",
+                        "#ContingentPeriodeDropDown"];
+        pageGetter.getOptions(selectorList, function(returnData){
+            res.writeHead(200, { 'Content-Type' : 'application/json' });
+            res.end(returnData);
+        });        
+    }else{
+        res.writeHead(404, { 'Content-Type' : 'application/json' });
+        res.end('[]');
+    }
 });
 
 var crawlingFlag = false;
-app.post('/startCrawling', function(req, res) {
-    if(!crawlingFlag){    
-        var emailReceivers = req.body['emails[]'];
-        var selectIndices = req.body['indices[]'];
-        var dSecond = req.body['dSecond'];
-        dSecond = (dSecond == null || dSecond < 0)?0:dSecond;
-        dSecond = parseInt(dSecond);
-        delayMilSec = dSecond * 1000;
-        pageGetter.setDelaySeconds(delayMilSec);
-        console.log("Receivers: " + emailReceivers);
-        console.log("Selected Indices: " + selectIndices);
-        console.log("Delayed time: " + delayMilSec + " ms");
-        console.log(req.body.ProcessTime);
-        // start the function to crawl
-        crawlingFlag = true;
-        pageGetter.intervalGrabbing(emailReceivers, selectIndices);        
+app.post('/startCrawling', function(req, res) { 
+    if(checkingConnection(req)){
+        if(!crawlingFlag){    
+            var emailReceivers = req.body['emails[]'];
+            var selectIndices = req.body['indices[]'];
+            var dSecond = req.body['dSecond'];
+            dSecond = (dSecond == null || dSecond < 0)?0:dSecond;
+            dSecond = parseInt(dSecond);
+            delayMilSec = dSecond * 1000;
+            pageGetter.setDelaySeconds(delayMilSec);
+            console.log("Receivers: " + emailReceivers);
+            console.log("Selected Indices: " + selectIndices);
+            console.log("Delayed time: " + delayMilSec + " ms");
+            console.log(req.body.ProcessTime);
+            // start the function to crawl
+            crawlingFlag = true;
+            pageGetter.intervalGrabbing(emailReceivers, selectIndices);        
+        }
+        res.writeHead(200, { 'Content-Type' : 'application/json' });
+        res.end('[]');
+    }else{
+        res.writeHead(404, { 'Content-Type' : 'application/json' });
+        res.end('[]');
     }
-    res.writeHead(200, { 'Content-Type' : 'application/json' });
-    res.end('[]');
 });
 
-app.get('/stopCrawling', function(req, res) {
-    if(crawlingFlag){
-        console.log("Stop the grabbing interval");
-        // stop the function to crawl
-        crawlingFlag = false;
-        pageGetter.stopGrabbing();    
-    }	
-    res.writeHead(200, { 'Content-Type' : 'application/json' });
-                "Crawling stopped..."
-    res.end('[]');
+app.get('/stopCrawling', function(req, res) { 
+    if(checkingConnection(req)){
+        if(crawlingFlag){
+            console.log("Stop the grabbing interval");
+            // stop the function to crawl
+            crawlingFlag = false;
+            pageGetter.stopGrabbing();    
+        }	
+        res.writeHead(200, { 'Content-Type' : 'application/json' });
+                    "Crawling stopped..."
+        res.end('[]');
+    }else{
+        res.writeHead(404, { 'Content-Type' : 'application/json' });
+        res.end('[]');
+    }
 });
 
 // catch 404 and forward to error handler
@@ -133,4 +189,5 @@ app.use(function(err, req, res, next) {
 
 
 
+/* app.listen(80); */// disable comment for production
 module.exports = app;
