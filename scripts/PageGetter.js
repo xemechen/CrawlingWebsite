@@ -1,5 +1,9 @@
 var emailPassword = "";
 /* ===== for crawling functions ===== */
+var ComponentManager = require('./ComponentManager');
+var allComponents = ComponentManager.getAllComponents(),
+	currentComponent = allComponents[0]; // use SSH as default
+
 var fs = require('fs'),
     request = require('request'),
     cheerio = require('cheerio'),
@@ -24,7 +28,9 @@ var sendingGmail = function(subject, content, receiver){
 	var sendingObject = {
 	  'subject': subject,
 	  'html': content, // better be html code
-	  'to' : receiver
+	  'to' : receiver,
+	  'user':'xemeusch@gmail.com',
+	  'pass': emailPassword
 	};
 
 	var callbk = function (err, res) {
@@ -32,7 +38,11 @@ var sendingGmail = function(subject, content, receiver){
 	};
 
     console.log("Sending email to " + receiver);
-	send(sendingObject, callbk);
+    try{
+		send(sendingObject, callbk);
+	}catch(err){
+		console.log(err);
+	}
 }
 
 var sendingBatchGmails = function(subject, content, receiverList){
@@ -42,27 +52,6 @@ var sendingBatchGmails = function(subject, content, receiverList){
             sendingGmail(subject, content, receiver);
         }        
     }
-}
-
-var emailContentBuilder = function(text, Housings){
-    if(Housings != null && Housings.length > 0){
-        for(var k = 0; k < Housings.length; k++){
-            var housingObj = Housings[k];
-            var link = housingObj.href;
-            var price = housingObj.price;
-            var name = housingObj.name;
-            // var availNumber = parseInt(housingObj.available);
-            var linkText = "<a href='" + link + "' target='_blank'> " + name + "(" + housingObj.available + ") with Price: " + price + "</a>"
-            if(text == null || text.trim().length == 0){
-                text = linkText;
-            }else{
-                text = text + "<br/>" + linkText;
-            }
-        }        
-        return text;
-    }
-
-    return "";
 }
 
 var phInstance = null;
@@ -77,8 +66,8 @@ var stopPhantom = function(){
     }
 }
 
-var getOptions = function(selectorList, callbackFn) {
-	var url = 'https://booking.sshxl.nl/accommodations';
+var getOptions = function(callbackFn) {	
+	var url = currentComponent.url;
     var sitepage = null;
     phInstance = null;
 
@@ -98,49 +87,7 @@ var getOptions = function(selectorList, callbackFn) {
                     console.log("Unable to access network");
                 } else {
                     console.log("Operations begin");
-                	var selectId = "RegioDropDown";
-                	var textSearch = "Groningen";
-                	sitepage.evaluate(function(selectId, textSearch, selectorList){
-                		var output = {};
-                		for(var j = 0; j < selectorList.length; j++){
-            				var sgSelector = selectorList[j];
-            				var options = $(sgSelector).children();
-            				var optionList = [];
-	                        for(var i = 0; i < options.length; i++){
-	                        	var optionText = $(options[i]).text().trim();
-	                        	if(optionText.length > 0){
-	                        		optionList.push({'selIndex':i, 'selText':optionText});
-	                        	};
-	                        }
-	                        if(optionList.length > 0){
-	                        	output[sgSelector] = optionList;
-	                        }
-                		}
-                        
-                        return JSON.stringify(output);
-                    }, selectId, textSearch, selectorList).then(function(output){
-                    	var fsFlag = true;
-                    	var outputJson = JSON.parse(output);
-                    	if(outputJson == null){
-                    		fsFlag = false;	
-                    	}else{
-                    		for(key in outputJson){
-                    			if(outputJson[key] == null || outputJson[key].length == 0){
-									fsFlag = false;
-                    			}
-                    		}
-                    	}
-                    	
-                    	if(fsFlag){
-				            fs.writeFile('public/ssh_options.json', output, function(err) {
-				                if (err) {
-				                    return console.error(err);
-				                }
-				                console.log("===***=== Select Options written for client access ===***===");
-				            });
-				        }
-                		callbackFn(output);
-                    });
+                	currentComponent.getPageOptions(sitepage, fs, callbackFn);
                 };
             });
         })
@@ -152,7 +99,7 @@ var getOptions = function(selectorList, callbackFn) {
 };
 
 var delayMilSec = 0
-var getPage = function(url, selectIndices, callback, callback2) {
+var getPage = function(url, dataPackage, callback, callback2) {
 
     var sitepage = null;
     phInstance = null;
@@ -224,227 +171,8 @@ var getPage = function(url, selectIndices, callback, callback2) {
                 } else {
                 	// ** jQuery 1.6.2 is included
                     console.log("Operations begin with delay: " +  + delayMilSec + " ms");
-                    // create selecting function
-                    var selecting = function(selector, index){
-                        var selectEle = sitepage.evaluate(function(selector, index){
-                        	try{
-                        		var sel = document.getElementById(selector);
-	                            sel.selectedIndex = index;
-	                            var event = document.createEvent("UIEvents"); // or "HTMLEvents"
-	                            event.initUIEvent("change", true, true);
-	                            sel.dispatchEvent(event);
-	                            return null;
-	                            // return document.body.innerHTML;	
-                        	}catch(err){
-                        		return err;
-                        	}
-                            
-                        }, selector, index).then(function(processOutput){
-                        	if(processOutput != null && processOutput.length > 0){
-                        		console.log("Operation error: " + processOutput);	
-                        	}                        	
-                        });
-                    };
-
-                	selecting("RegioDropDown", selectIndices[0] || 1);	
-                	selecting("ContingenthouderDropDown", selectIndices[1] || 1);
-                	selecting("ContingentDoelgroepDropDown", selectIndices[2] || 1);
-                	selecting("ContingentPeriodeDropDown", selectIndices[3] || 1);
-
-                	var ttst = function(){
-						return document.querySelectorAll("#Advertenties > a").length > 0;
-					};
-                    waitFour(testing, ttst, function(){
-                    	// callback function when page is loaded
-                    	console.log("Calling onReady function");
-                    	sitepage.evaluate(function(){
-                        	var mapper = { "adres": "Address",
-                                        "type": "Type",
-                                        "grootte": "Size",
-                                        "adressen": "Available",
-                                        "prijs": "Price"
-                                    };
-
-                            var getChildrenEle = function(parent){
-                            	if(parent == null){
-                            		return [];
-                            	}
-                                var children = parent.childNodes;
-                                var elementChild = [];
-                                for (i = 0; i < children.length; i++) {
-                                    if(children[i].nodeType == 1){
-                                        elementChild.push(children[i]);
-                                    }
-                                }
-                                return elementChild;
-                            }
-                            var buildObjects = function(children){
-                            	if(children.length == 0){
-                            		return null;
-                            	}
-
-                                var returnObj = {};
-                                for(var i = 0; i < children.length; i++){
-                                    var clas = children[i].getAttribute("class")
-                                    var text = children[i].textContent.split("\n").join("").trim();
-                                    returnObj[mapper[clas]] = text;
-                                }
-                                return returnObj;
-                            }
-
-                            var returnList = [];
-                            var returnObj = {'status':'success'};
-                            try{
-                            	if(document.querySelectorAll("#Advertenties").length == 0){
-                            		returnObj.status = 'error';
-                            		returnObj.error = "No results found";
-                            		return JSON.stringify(returnObj);
-                            	}
-                                var aList = document.querySelectorAll("#Advertenties > a");
-                                if(aList && aList.length > 0){
-                                    for(var j = 0; j < aList.length; j++){
-                                        var link = "https://booking.sshxl.nl" + aList[j].getAttribute("href");
-                                        var children = getChildrenEle(aList[j].children[1]);
-                                        var tempObj = buildObjects(children);
-                                        if(tempObj == null){
-
-                                        }else{
-                                        	tempObj.link = link;
-                                        	returnList.push(tempObj);	
-                                        }                                        
-                                    }
-                                }
-                            }catch(err){
-                                console.log("Page fectching error: " + err);
-                                returnObj.error = err;
-                                returnObj.status = 'error';
-                            }
-
-                            returnObj.result = returnList;
-
-                            return JSON.stringify(returnObj);
-                        })
-                        .then(function(outcome){  
-                        	var outcomeObj = JSON.parse(outcome);
-                        	if(outcomeObj.status == 'error'){
-                    			console.log("Page fectching error: " + outcomeObj.error);
-                        	}else{
-                        		var callbackString = JSON.stringify(outcomeObj.result);
-                        		console.log("Finished loading page");
-                            	callback(callbackString);	
-                        	}                            
-                            phInstance.exit();
-
-                            timeOutList = [];
-                            var finalTO = setTimeout(function(){
-                            	callback2();
-                            }, delayMilSec);
-                            timeOutList.push(finalTO);
-                        });
-                    }, 90000 + delayMilSec);
-
-                	
-                    /*
-                    timeOutList = [];
-                    var timeout1 = setTimeout(function(){
-                    	selecting("RegioDropDown", selectIndices[0] || 1)	
-                    }, 100 + delayMilSec);
-                    timeOutList.push(timeout1);
-
-                    var timeout2 = setTimeout(function(){
-                    	selecting("ContingenthouderDropDown", selectIndices[1] || 1);
-                    }, 400 + delayMilSec);
-                    timeOutList.push(timeout2);
-
-                    var timeout3 = setTimeout(function(){
-                    	selecting("ContingentDoelgroepDropDown", selectIndices[2] || 1);
-                    	selecting("ContingentPeriodeDropDown", selectIndices[3] || 1);
-                    }, 2000 + delayMilSec);
-                    timeOutList.push(timeout3);
-
-                    var timeout4 = setTimeout(function(){
-                        var outcome = sitepage.evaluate(function(){
-                        	var mapper = { "adres": "Address",
-                                        "type": "Type",
-                                        "grootte": "Size",
-                                        "adressen": "Available",
-                                        "prijs": "Price"
-                                    };
-
-                            var getChildrenEle = function(parent){
-                            	if(parent == null){
-                            		return [];
-                            	}
-                                var children = parent.childNodes;
-                                var elementChild = [];
-                                for (i = 0; i < children.length; i++) {
-                                    if(children[i].nodeType == 1){
-                                        elementChild.push(children[i]);
-                                    }
-                                }
-                                return elementChild;
-                            }
-                            var buildObjects = function(children){
-                            	if(children.length == 0){
-                            		return null;
-                            	}
-
-                                var returnObj = {};
-                                for(var i = 0; i < children.length; i++){
-                                    var clas = children[i].getAttribute("class")
-                                    var text = children[i].textContent.split("\n").join("").trim();
-                                    returnObj[mapper[clas]] = text;
-                                }
-                                return returnObj;
-                            }
-
-                            var returnList = [];
-                            var returnObj = {'status':'success'};
-                            try{
-                            	if(document.querySelectorAll("#Advertenties").length == 0){
-                            		returnObj.status = 'error';
-                            		returnObj.error = "No results found";
-                            		return JSON.stringify(returnObj);
-                            	}
-                                var aList = document.querySelectorAll("#Advertenties > a");
-                                if(aList && aList.length > 0){
-                                    for(var j = 0; j < aList.length; j++){
-                                        var link = "https://booking.sshxl.nl" + aList[j].getAttribute("href");
-                                        var children = getChildrenEle(aList[j].children[1]);
-                                        var tempObj = buildObjects(children);
-                                        if(tempObj == null){
-
-                                        }else{
-                                        	tempObj.link = link;
-                                        	returnList.push(tempObj);	
-                                        }                                        
-                                    }
-                                }
-                            }catch(err){
-                                console.log("Page fectching error: " + err);
-                                returnObj.error = err;
-                                returnObj.status = 'error';
-                            }
-
-                            returnObj.result = returnList;
-
-                            return JSON.stringify(returnObj);
-                        })
-                        .then(function(outcome){  
-                        	var outcomeObj = JSON.parse(outcome);
-                        	if(outcomeObj.status == 'error'){
-                    			console.log("Page fectching error: " + outcomeObj.error);
-                        	}else{
-                        		var callbackString = JSON.stringify(outcomeObj.result);
-                        		console.log("Finished loading page");
-                            	callback(callbackString);	
-                        	}                            
-                            phInstance.exit();
-                            callback2();
-                        });
-                    }, 50000 + delayMilSec*2);
-                    timeOutList.push(timeout4);
-                    */
+                	currentComponent.pageOperations(phInstance, sitepage, dataPackage
+                		, waitFour, testing, delayMilSec, callback, callback2);
                 };
             });
         })
@@ -455,97 +183,14 @@ var getPage = function(url, selectIndices, callback, callback2) {
 
 };
 
-var Housing = function(Name, Price, Href, Available){
-    this.name = Name;
-    this.price = Price;
-    this.href = Href;
-    this.available = Available;
-};
 
-var calculateSummary = function(list){
-    if(list == null || list.length == 0){
-        return {};
-    }
-    console.log("Process summary");
-    var summaryObj = {};
-    for(var i = 0; i < list.length; i++){
-        var itm = list[i];
-        if(summaryObj[itm.Type] == null){
-            summaryObj[itm.Type] = parseInt(itm.Available);
-        }else{
-            summaryObj[itm.Type] = summaryObj[itm.Type] + parseInt(itm.Available);
-        }
-    }
-    // console.log(summaryObj);
-    return summaryObj;
-}
 
-var compareTwoObject = function(oldO, newO){ 
-    console.log("Compare two summary");
-    console.log(oldO);
-    console.log(newO);
-    var keyType = [];
-    for(key in newO){
-        if(oldO[key] == null){
-            keyType.push(key);
-        }else{
-            if(newO[key] > oldO[key]){
-                keyType.push(key);
-            }
-        }
-    }
-    return keyType;
-}
-
-var previousReturnList = [];
-var firstTimeFlag = true;
-var dataChecker = function(newList){
-    var HouseLinks = [];
-    
-    // Checking for the first time
-    if(firstTimeFlag){     
-        console.log("Checking for the first time");
-        firstTimeFlag = false;
-        previousReturnList = newList;
-        return [false, HouseLinks];
-    }
-    
-    // console.log("Checking for updated housing");
-    // if(previousReturnList == null || previousReturnList.length == 0){
-    //     previousReturnList = newList;
-    //     return [false, HouseLinks];
-    // }
-
-    // checking after first time    
-    
-    var previousSummary = calculateSummary(previousReturnList);
-    var newSummary = calculateSummary(newList);
-
-    var updatedTypeList = compareTwoObject(previousSummary, newSummary);
-    console.log(updatedTypeList);
-
-    for(var index = 0; index < newList.length; index++){
-        var houseItem = newList[index];
-        if(updatedTypeList.indexOf(houseItem.Type) > -1){
-            HouseLinks.push(new Housing(houseItem.Type, houseItem.Price, houseItem.link, houseItem.Available));
-        }
-    }
-
-    previousReturnList = newList;
-    if(HouseLinks.length > 0){
-        return [true, HouseLinks, JSON.stringify(updatedTypeList)];
-    }else{
-        return [false, HouseLinks];
-    }   
-    
-}
-
-var toGetPageFn = function(emailReceivers, selectIndices){
+var toGetPageFn = function(emailReceivers, dataPackage){
     console.log("");
     console.log("======================================================");
     console.log("");
     console.log("開始讀取......");
-    getPage('https://booking.sshxl.nl/accommodations', selectIndices, function(outcome) {
+    getPage(currentComponent.url, dataPackage, function(outcome) {
     	if(outcome == null){
     		return console.error("Error getting data from the page");
     	}
@@ -555,14 +200,14 @@ var toGetPageFn = function(emailReceivers, selectIndices){
             emailReceivers = ["", "xemeusch@gmail.com"];
         }        
 
-        var checkingResult = dataChecker(jsonObj);
+        var checkingResult = currentComponent.dataChecker(jsonObj);
         if(checkingResult[0]){
             // checked is true, send email alert
-            var emailContent = emailContentBuilder("New room(s) available, please click the following link(s) to check. <br/>", checkingResult[1]);
-            sendingBatchGmails("SSH Housing alert! " + checkingResult[2], emailContent, emailReceivers);
+            var emailContent = currentComponent.emailContentBuilder(checkingResult[1]);
+            sendingBatchGmails(currentComponent.emailSubject + checkingResult[2], emailContent, emailReceivers);
 
             // save to both JSON files
-            fs.writeFile('ssh_result.json', outcome, function(err) {
+            fs.writeFile(currentComponent.fileName + '.json', outcome, function(err) {
                 if (err) {
                     return console.error(err);
                 }
@@ -571,7 +216,7 @@ var toGetPageFn = function(emailReceivers, selectIndices){
             var timeStmp = new Date();
             var strTime = "" + timeStmp.getFullYear() + "-" + (timeStmp.getMonth()+1) + "-" + timeStmp.getDate() + "_"
             + timeStmp.getHours() + "-" + timeStmp.getMinutes() + "-" + timeStmp.getSeconds();
-            fs.writeFile('archived/ssh_result' + strTime + '.json', outcome, function(err) {
+            fs.writeFile('archived/' + currentComponent.fileName + strTime + '.json', outcome, function(err) {
                 if (err) {
                     return console.error(err);
                 }
@@ -580,7 +225,7 @@ var toGetPageFn = function(emailReceivers, selectIndices){
 
         }else{
             // no update, just update JSON
-            fs.writeFile('ssh_result.json', outcome, function(err) {
+            fs.writeFile(currentComponent.fileName + '.json', outcome, function(err) {
                 if (err) {
                     return console.error(err);
                 }
@@ -590,7 +235,7 @@ var toGetPageFn = function(emailReceivers, selectIndices){
 
         // write for client access
         if(jsonObj){
-            fs.writeFile('public/ssh_result.json', outcome, function(err) {
+            fs.writeFile('public/' + currentComponent.fileName + '.json', outcome, function(err) {
                 if (err) {
                     return console.error(err);
                 }
@@ -600,19 +245,19 @@ var toGetPageFn = function(emailReceivers, selectIndices){
         
     }, toGetPageFnGlobal);
 }
-var emailReceiversGlobal, selectIndicesGlobal;
+var emailReceiversGlobal, dataPackageGlobal;
 var toGetPageFnGlobal = function(){
-	toGetPageFn(emailReceiversGlobal, selectIndicesGlobal);
+	toGetPageFn(emailReceiversGlobal, dataPackageGlobal);
 }
 
 
 var grabInterval;
-var intervalGrabbing = function(emailReceivers, selectIndices){
+var intervalGrabbing = function(emailReceivers, dataPackage){
     console.log("開始週期取值......with delay " + delayMilSec);
     firstTimeFlag = true;
     emailReceiversGlobal = emailReceivers;
-    selectIndicesGlobal = selectIndices;
-    toGetPageFn(emailReceivers, selectIndices);
+    dataPackageGlobal = dataPackage;
+    toGetPageFn(emailReceivers, dataPackage);
 
     // grabInterval = setInterval(function(){
     //     toGetPageFn(emailReceivers, selectIndices);
@@ -622,6 +267,7 @@ var stopGrabbing = function(){
 	console.log("停止週期取值......");
 	clearInterval(grabInterval);
     stopPhantom();
+    currentComponent.stopPhantom();
 }
 
 var setPassword = function(param){
@@ -633,6 +279,11 @@ var setDelaySeconds = function(param){
 	delayMilSec = param;
 }
 
+var selectComponent = function(index){
+	currentComponent = allComponents[index];
+	console.log('Component selected: ' + currentComponent.title);
+}
+
 /* ===== for crawling functions ===== */
 
 module.exports.intervalGrabbing = intervalGrabbing;
@@ -640,3 +291,4 @@ module.exports.stopGrabbing = stopGrabbing;
 module.exports.setPassword = setPassword;
 module.exports.setDelaySeconds = setDelaySeconds;
 module.exports.getOptions = getOptions;
+module.exports.selectComponent = selectComponent;

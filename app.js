@@ -10,7 +10,6 @@ var index = require('./routes/index');
 var users = require('./routes/users');
 var pageGetter = require('./scripts/PageGetter');
 
-
 var app = express();
 
 var emailPassword = "";
@@ -119,11 +118,9 @@ app.post('/submitPass', function(req, res) {
 app.post('/crawlingOptions', function(req, res) {   
     if(checkingConnection(req)){
         console.log("Getting options..."); 
-        var selectorList = ["#RegioDropDown",
-                        "#ContingenthouderDropDown",
-                        "#ContingentDoelgroepDropDown",
-                        "#ContingentPeriodeDropDown"];
-        pageGetter.getOptions(selectorList, function(returnData){
+
+        pageGetter.selectComponent(0);        
+        pageGetter.getOptions(function(returnData){
             res.writeHead(200, { 'Content-Type' : 'application/json' });
             res.end(returnData);
         });        
@@ -138,19 +135,20 @@ app.post('/startCrawling', function(req, res) {
     if(checkingConnection(req)){
         if(!crawlingFlag){    
             var emailReceivers = req.body['emails[]'];
-            var selectIndices = req.body['indices[]'];
+            var dataPackage = JSON.parse(req.body['dataPackage']);
             var dSecond = req.body['dSecond'];
             dSecond = (dSecond == null || dSecond < 0)?0:dSecond;
             dSecond = parseInt(dSecond);
             delayMilSec = dSecond * 1000;
             pageGetter.setDelaySeconds(delayMilSec);
             console.log("Receivers: " + emailReceivers);
-            console.log("Selected Indices: " + selectIndices);
+            console.log("Data Package: " + JSON.stringify(dataPackage));
             console.log("Delayed time: " + delayMilSec + " ms");
             console.log(req.body.ProcessTime);
             // start the function to crawl
+            pageGetter.selectComponent(0);
             crawlingFlag = true;
-            pageGetter.intervalGrabbing(emailReceivers, selectIndices);        
+            pageGetter.intervalGrabbing(emailReceivers, dataPackage);        
         }
         res.writeHead(200, { 'Content-Type' : 'application/json' });
         res.end('[]');
@@ -170,6 +168,33 @@ app.post('/stopCrawling', function(req, res) {
         }	
         res.writeHead(200, { 'Content-Type' : 'application/json' });
                     "Crawling stopped..."
+        res.end('[]');
+    }else{
+        res.writeHead(404, { 'Content-Type' : 'application/json' });
+        res.end('[]');
+    }
+});
+
+// crawling Amazon
+var amazonCrawlingFlag = true;
+app.post('/crawlingAmazon', function(req, res) {   
+    if(checkingConnection(req)){
+        if(amazonCrawlingFlag){
+            pageGetter.selectComponent(1);
+            console.log("Start watching Amazon item");
+            var emailReceivers = req.body['emails[]'];
+            console.log("Receivers: " + emailReceivers);
+            console.log(req.body.ProcessTime);
+            // start the function to crawl
+            // amazonCrawlingFlag = false;
+            try{
+                pageGetter.intervalGrabbing(emailReceivers, {}); 
+            }catch(err){
+                amazonCrawlingFlag = true;
+            }
+        }   
+        res.writeHead(200, { 'Content-Type' : 'application/json' });
+                    "Crawling Amazon..."
         res.end('[]');
     }else{
         res.writeHead(404, { 'Content-Type' : 'application/json' });

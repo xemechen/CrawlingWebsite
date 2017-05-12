@@ -76,7 +76,9 @@ block content
         span &emsp; 
         img(ng-if="crawlingStatus" src="loading-animal.gif")
         span(ng-if="crawlingStatus") Crawling...
-        br    
+        br
+        button.btn.btn-primary(ng-click='crawlingAmazon()') Crawling Amazon            
+        br
         br
       button.btn.btn-info(ng-click="getJson()") Start watching JSON Data
       span &emsp;

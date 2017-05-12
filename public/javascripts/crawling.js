@@ -80,7 +80,7 @@ app.controller("retrievingCtrl", function($scope) {
 			}
 			prf(procIndices);
 			if(procIndices.length == indices.length){
-				dataObj.indices = procIndices;
+				dataObj.dataPackage = JSON.stringify({'selectIndices' : procIndices});
 			}
 			dataObj.passcode = $scope.passcode.trim();
 
@@ -92,6 +92,8 @@ app.controller("retrievingCtrl", function($scope) {
 			prf("Delay second: " + dSecond);
 
 			$scope.crawlingStatus = true;
+
+			prf(dataObj);
 		    $.ajax({
 		        type: 'POST',
 		        url: 'http://'+connectionDomain+'/startCrawling',
@@ -144,6 +146,34 @@ app.controller("retrievingCtrl", function($scope) {
 		        }
 			});		
 		}
+	}
+
+	$scope.crawlingAmazon = function(){
+		// process receivers
+		var emails = $(".input-email");
+		var receivers = [""]; // leading text
+		for(var i = 0; i < emails.length; i++){
+			var email = $(emails[i]).val();
+			if(email != null && email.trim().length > 0 && receivers.indexOf(email.trim()) == -1){
+				receivers.push(email.trim());
+			}
+		}
+		prf(receivers);
+
+		var dataObj = {
+			'emails': receivers, 
+			'ProcessTime': new Date(),
+			'passcode': $scope.passcode.trim()
+		};
+
+		$.ajax({
+		    type: 'POST',
+	        url: 'http://'+connectionDomain+'/crawlingAmazon',
+	        data: dataObj,
+	        success: function(a, b, c){
+	        	console.log("Watching Amazon");
+	        }
+		});	
 	}
 
 	// $scope.checkPass = function(){
