@@ -12,6 +12,7 @@ app.controller("retrievingCtrl", function($scope) {
 	$scope.passcode = "";
 	$scope.updatingOptions = false;
 	$scope.crawlingStatus = false;
+	$scope.gettingJson = false;
 
 	var optionProc = function(returnData, firstLoadingFlag){
 		crawlingFlag = true;
@@ -127,9 +128,37 @@ app.controller("retrievingCtrl", function($scope) {
 		        }
 		    });
 		}
-	};
+	};    
 
-    var extractProperty = function(list, fieldName){
+	$scope.crawlingButton = false;
+	$scope.submitPass = function(){
+		if($scope.passcode && $scope.passcode.trim().length > 0){
+			prf($scope.passcode.trim());
+			$.ajax({
+			    type: 'POST',
+		        url: 'http://'+connectionDomain+'/submitPass',
+		        data: {'passcode': $scope.passcode.trim()},
+		        success: function(a, b, c){
+		        	$scope.crawlingButton = true;
+		        	$scope.$apply();
+		        }
+			});		
+		}
+	}
+
+	// $scope.checkPass = function(){
+	// 	$.ajax({
+	// 	    type: 'GET',
+	//         url: 'http://'+connectionDomain+'/submitPass',
+	//         success: function(a, b, c){
+	//         	$scope.crawlingButton = true;
+	//         	$scope.$apply();
+	//         }
+	// 	});		
+	// }
+
+
+	var extractProperty = function(list, fieldName){
 		var toReturn = [];
 		for(var i = 0; i < list.length; i++){
 			var object = list[i];
@@ -180,45 +209,20 @@ app.controller("retrievingCtrl", function($scope) {
 	}
 	$scope.result = [];
 
-	$scope.crawlingButton = false;
-	$scope.submitPass = function(){
-		if($scope.passcode && $scope.passcode.trim().length > 0){
-			prf($scope.passcode.trim());
-			$.ajax({
-			    type: 'POST',
-		        url: 'http://'+connectionDomain+'/submitPass',
-		        data: {'passcode': $scope.passcode.trim()},
-		        success: function(a, b, c){
-		        	$scope.crawlingButton = true;
-		        	$scope.$apply();
-		        }
-			});		
-		}
-	}
-
-	// $scope.checkPass = function(){
-	// 	$.ajax({
-	// 	    type: 'GET',
-	//         url: 'http://'+connectionDomain+'/submitPass',
-	//         success: function(a, b, c){
-	//         	$scope.crawlingButton = true;
-	//         	$scope.$apply();
-	//         }
-	// 	});		
-	// }
-
 	var jsonIntval;
 	$scope.getJson = function(){
 		console.log("Start getting JSON");
+		$scope.gettingJson = true;
 		ajaxToGetJSON();
 		jsonIntval = setInterval(function(){			
 			ajaxToGetJSON();
-		}, 35000);
+		}, 45000);
 	};
 
 	$scope.stopJson = function(){
 		clearInterval(jsonIntval);
 		console.log("Stop getting JSON");
+		$scope.gettingJson = false;
 	}
 
 	$scope.ajaxToGetOptions = function(){
