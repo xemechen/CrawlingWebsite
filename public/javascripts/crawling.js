@@ -176,7 +176,7 @@ app.controller("retrievingCtrl", function($scope) {
 	}
 	$scope.result = [];
 
-	$scope.crawlingButton = true;
+	$scope.crawlingButton = false;
 	$scope.submitPass = function(){
 		if($scope.passcode && $scope.passcode.trim().length > 0){
 			prf($scope.passcode.trim());
