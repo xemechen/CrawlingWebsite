@@ -9,6 +9,7 @@ app.controller("retrievingCtrl", function($scope) {
 	}
 
 	$scope.select = {};	
+	$scope.passcode = "";
 	$scope.updatingOptions = false;
 	$scope.crawlingStatus = false;
 
@@ -34,8 +35,9 @@ app.controller("retrievingCtrl", function($scope) {
 			crawlingFlag = false;
 			$scope.updatingOptions = true;
 			$.ajax({
-		        type: 'GET',
+		        type: 'POST',
 		        url: 'http://'+connectionDomain+'/crawlingOptions',
+		        data:{'passcode': $scope.passcode.trim()},
 		        success: optionProc,
 		        error: function(){
 		        	$scope.errorOption = "Cannot get the data"; 
@@ -79,6 +81,7 @@ app.controller("retrievingCtrl", function($scope) {
 			if(procIndices.length == indices.length){
 				dataObj.indices = procIndices;
 			}
+			dataObj.passcode = $scope.passcode.trim();
 
 			// process delayed second
 			var dSecond = $("#delayed-second").val();
@@ -109,8 +112,9 @@ app.controller("retrievingCtrl", function($scope) {
 			prf("Calling server to stop crawling");
 			$scope.crawlingStatus = false;
 		    $.ajax({
-		        type: 'GET',
+		        type: 'POST',
 		        url: 'http://'+connectionDomain+'/stopCrawling',
+		        data: {'passcode': $scope.passcode.trim()},
 		        success: function(){
 		        	crawlingFlag = true;
 		        	$scope.crawlingStatus = false;
@@ -192,30 +196,24 @@ app.controller("retrievingCtrl", function($scope) {
 		}
 	}
 
-	$scope.checkPass = function(){
-		$.ajax({
-		    type: 'GET',
-	        url: 'http://'+connectionDomain+'/submitPass',
-	        success: function(a, b, c){
-	        	$scope.crawlingButton = true;
-	        	$scope.$apply();
-	        }
-		});		
-	}
+	// $scope.checkPass = function(){
+	// 	$.ajax({
+	// 	    type: 'GET',
+	//         url: 'http://'+connectionDomain+'/submitPass',
+	//         success: function(a, b, c){
+	//         	$scope.crawlingButton = true;
+	//         	$scope.$apply();
+	//         }
+	// 	});		
+	// }
 
 	var jsonIntval;
 	$scope.getJson = function(){
 		console.log("Start getting JSON");
 		ajaxToGetJSON();
-		// $.getJSON("movie-crawler-master/ssh_result.json", function(result) {	
-		// 	calculateSummary(result);			
-		//     $scope.result = result;
-		//     $scope.$apply();
-		//     // $('.inner-data').html(JSON.stringify(processed)); // this will show the info it in firebug console
-		// });	
 		jsonIntval = setInterval(function(){			
 			ajaxToGetJSON();
-		}, 8000);
+		}, 35000);
 	};
 
 	$scope.stopJson = function(){
@@ -234,7 +232,7 @@ app.controller("retrievingCtrl", function($scope) {
 		});		
 	}
 	
-	$scope.checkPass();
+	// $scope.checkPass();
 	$scope.ajaxToGetOptions();
 	ajaxToGetJSON();
 });

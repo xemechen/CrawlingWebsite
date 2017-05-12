@@ -74,12 +74,20 @@ app.use('/users', users);
 var connectionPool = {'127.0.0.1:3000':false}; // e.g., {'52.32.108.109'}:true
 // set REST API
 var checkingConnection= function(reqParam){
+    var toReturn = false;
     var connectionKey = reqParam.headers.host;
-    console.log(connectionKey);
-    if(connectionPool[connectionKey]){
-        return true;
+
+    if(reqParam && reqParam.body && reqParam.body.passcode){
+        var inputPasscode = reqParam.body.passcode.trim();
+        if(tempPasscode == inputPasscode){
+            toReturn = true;    
+        }        
     }
-    return false;
+    return toReturn;
+    // if(connectionPool[connectionKey]){
+    //     return true;
+    // }
+    // return false;
 }
 app.post('/submitPass', function(req, res) {    
     var connectionKey = req.headers.host;
@@ -88,27 +96,27 @@ app.post('/submitPass', function(req, res) {
     console.log(inputPasscode);
     if(tempPasscode == inputPasscode){
         console.log("Passcode correct!");
-        connectionPool[connectionKey] = true;
+        // connectionPool[connectionKey] = true;
         res.writeHead(200, { 'Content-Type' : 'application/json' });
         res.end('[]');
     }else{
-        connectionPool[connectionKey] = false;
+        // connectionPool[connectionKey] = false;
         res.writeHead(404, { 'Content-Type' : 'application/json' });
         res.end('[]');
     }
 });
 
-app.get('/submitPass', function(req, res) {   
-    if(checkingConnection(req)){
-        res.writeHead(200, { 'Content-Type' : 'application/json' });
-        res.end('[]');
-    }else{
-        res.writeHead(404, { 'Content-Type' : 'application/json' });
-        res.end('[]');
-    }
-});
+// app.get('/submitPass', function(req, res) {   
+//     if(checkingConnection(req)){
+//         res.writeHead(200, { 'Content-Type' : 'application/json' });
+//         res.end('[]');
+//     }else{
+//         res.writeHead(404, { 'Content-Type' : 'application/json' });
+//         res.end('[]');
+//     }
+// });
 
-app.get('/crawlingOptions', function(req, res) {   
+app.post('/crawlingOptions', function(req, res) {   
     if(checkingConnection(req)){
         console.log("Getting options..."); 
         var selectorList = ["#RegioDropDown",
@@ -152,7 +160,7 @@ app.post('/startCrawling', function(req, res) {
     }
 });
 
-app.get('/stopCrawling', function(req, res) { 
+app.post('/stopCrawling', function(req, res) { 
     if(checkingConnection(req)){
         if(crawlingFlag){
             console.log("Stop the grabbing interval");
