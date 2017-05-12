@@ -81,7 +81,8 @@ block content
       button.btn.btn-info(ng-click="getJson()") Start watching JSON Data
       span &emsp;
       button.btn.btn-info(ng-click="stopJson()") Stop watching JSON Data
-      br
+      span &emsp; 
+      img(ng-if="gettingJson" src="loading-animal.gif")
       br
       div(ng-repeat="(k, v) in summary")
         span {{k + ': ' + v}}
