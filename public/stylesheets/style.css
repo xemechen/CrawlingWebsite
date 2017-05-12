@@ -11,8 +11,6 @@ ul {
 }
 li {
   list-style-type: none;
-  padding-left: 15px;
-  padding-right: 15px;
   margin: 2px;
   box-shadow: 0px 0px 3px 1px #808080;
 }

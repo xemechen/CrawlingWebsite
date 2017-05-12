@@ -2,6 +2,14 @@ p {
 	font-style: italic;
 }
 
+nav > ul > li > a.nav-link{
+    color: #337ab7;
+    display: inline-block;
+    width: 100%;
+    height: 100%;
+    padding: 5px 10px 5px 10px;
+}
+
 #crawling p{
 	font-style: normal;
 }
@@ -27,8 +35,12 @@ p {
     	font-size: 25px;
     }
 
-    nav li a{
-        color: white;
+    nav > ul > li > a.nav-link{
+        color: white;    
+        display: inline-block;
+        width: 100%;
+        height: 100%;
+        padding: 5px 10px 5px 10px;
     }
 
     #crawling button.btn {
