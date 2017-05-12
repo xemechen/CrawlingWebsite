@@ -1,11 +1,17 @@
-this.title = 'SSH';
-this.url = 'https://booking.sshxl.nl/accommodations',
-this.fileName = "ssh_result",
-this.optionFileName = "ssh_options",
-this.selectorList = ["#RegioDropDown",
+var title = 'SSH';
+	url = 'https://booking.sshxl.nl/accommodations',
+	fileName = "ssh_result",
+	optionFileName = "ssh_options",
+	selectorList = ["#RegioDropDown",
                     "#ContingenthouderDropDown",
                     "#ContingentDoelgroepDropDown",
-                    "#ContingentPeriodeDropDown"];; // file name to save
+                    "#ContingentPeriodeDropDown"]; // file name to save
+
+this.title = title;
+this.url = url,
+this.fileName = fileName,
+this.optionFileName = optionFileName,
+this.selectorList = selectorList; // file name to save
 
 var Housing = function(Name, Price, Href, Available){
     this.name = Name;
@@ -150,7 +156,7 @@ this.getPageOptions = function(sitepage, fs, callbackFn){
     	}
     	
     	if(fsFlag){
-            fs.writeFile('public/' + this.optionFileName +'.json', output, function(err) {
+            fs.writeFile('public/' + optionFileName +'.json', output, function(err) {
                 if (err) {
                     return console.error(err);
                 }

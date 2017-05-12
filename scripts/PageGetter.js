@@ -172,7 +172,7 @@ var getPage = function(url, dataPackage, callback, callback2) {
                 	// ** jQuery 1.6.2 is included
                     console.log("Operations begin with delay: " +  + delayMilSec + " ms");
                 	currentComponent.pageOperations(phInstance, sitepage, dataPackage
-                		, waitFour, testing, delayMilSec, callback, callback2);
+                		, waitFour, testing, delayMilSec, callback, callback2, fs);
                 };
             });
         })

@@ -1,12 +1,17 @@
-this.title = 'AmazonJP';
-this.url = 'https://www.amazon.co.jp/Nintendo-Switch-Joy-Con-%E3%83%8D%E3%82%AA%E3%83%B3%E3%83%96%E3%83%AB%E3%83%BC-%E3%83%8D%E3%82%AA%E3%83%B3%E3%83%AC%E3%83%83%E3%83%89/dp/B01NCXFWIZ',
-// this.url = 'https://booking.sshxl.nl/accommodations';
-this.fileName = "amazon_result",
-this.optionFileName = "amazon_options",
-this.selectorList = ["#RegioDropDown",
+var title = 'AmazonJP',
+	url = 'https://www.amazon.co.jp/gp/offer-listing/B01NAU8B71/',
+	fileName = "amazon_result",
+	optionFileName = "amazon_options",
+	selectorList = ["#RegioDropDown",
                     "#ContingenthouderDropDown",
                     "#ContingentDoelgroepDropDown",
                     "#ContingentPeriodeDropDown"]; // file name to save
+
+this.title = title;
+this.url = url,
+this.fileName = fileName,
+this.optionFileName = optionFileName,
+this.selectorList = selectorList; // file name to save
 
 var Housing = function(Name, Price, Href, Available){
     this.name = Name;
@@ -151,7 +156,7 @@ this.getPageOptions = function(sitepage, fs, callbackFn){
     	}
     	
     	if(fsFlag){
-            fs.writeFile('public/' + this.optionFileName +'.json', output, function(err) {
+            fs.writeFile('public/' + optionFileName +'.json', output, function(err) {
                 if (err) {
                     return console.error(err);
                 }
@@ -164,7 +169,7 @@ this.getPageOptions = function(sitepage, fs, callbackFn){
 
 var timeOutList = [];
 var phInstance;
-this.pageOperations = function(phInstanceParam, sitepage, dataPackage, waitFour, testing, delayMilSec, callback, callback2){	
+this.pageOperations = function(phInstanceParam, sitepage, dataPackage, waitFour, testing, delayMilSec, callback, callback2, fs){	
 	console.log("Calling page operations in component");
 	phInstance = phInstanceParam;
 
@@ -190,53 +195,42 @@ this.pageOperations = function(phInstanceParam, sitepage, dataPackage, waitFour,
         });
     };
 
-    var clicking = function(filter){
-        var selectEle = sitepage.evaluate(function(filter){
-        	try{
-        		index = index || 0;
-        		var target = filter();
-                var event = document.createEvent("UIEvents"); // or "HTMLEvents"
-                event.initUIEvent("click", true, true);
-                target[index].dispatchEvent(event);
-                return null;
-                // return document.body.innerHTML;	
+    var clicking = function(){
+    	console.log("Clicking link");
+        sitepage.evaluate(function(){
+        	try{        		
+        		var target = document.querySelectorAll("#variationsTwister li a");
+                // var event = document.createEvent("UIEvents"); // or "HTMLEvents"
+                // event.initUIEvent("click", true, true);
+                // target[0].dispatchEvent(event);
+                var target2 = document.querySelectorAll("#olpOfferList div.a-row"); // index 0 is the title row
+                
+                return 'Test ' + target2.length;
         	}catch(err){
-        		return err;
+        		return "Error: " + err;
         	}
-            
-        }, filter).then(function(processOutput){
+        }).then(function(processOutput){
         	if(processOutput != null && processOutput.length > 0){
-        		console.log("Operation error: " + processOutput);	
+        		console.log("Operation error: " + processOutput);
         	}                        	
         });
     };
-
-    var filter = function(){
-    	var allLinks = document.querySelectorAll("a");
-    	for(var i = 0; i < allLinks.length; i++){
-    		if($(allLinks[i]).text().trim().indexOf('新品の出品') > -1){
-    			return allLinks[i];
-    		}
-    	}
-    	return document.body;
-    }
-
-    console.log("Clicking link");
-	clicking(filter);
+    
+	clicking();
 
 	var test1 = function(){
 		return document.querySelectorAll("#olpOfferList div.a-row").length > 0;
 	};
 
-    waitFour(testing, test1, function(){
-    	// callback function when page is loaded
-    	console.log("Calling onReady function");
-		sitepage.evaluate(function(){
-        	return document.querySelectorAll("#olpOfferList div.a-row").length;            
-        }).then(function(processOutput){
-        	console.log("Output: "+ processOutput);	
-        });        
-    }, 90000 + delayMilSec);
+  //   waitFour(testing, test1, function(){
+  //   	// callback function when page is loaded
+  //   	console.log("Calling onReady function");
+		// sitepage.evaluate(function(){
+  //       	return document.querySelectorAll("#olpOfferList div.a-row").length;            
+  //       }).then(function(processOutput){
+  //       	console.log("Output: "+ processOutput);	
+  //       });        
+  //   }, 90000 + delayMilSec);
 }
 
 this.stopPhantom = function(){
