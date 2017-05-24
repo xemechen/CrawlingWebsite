@@ -13,6 +13,10 @@ block content
         input.form-control(type='text', placeholder='e.g., 9dx^8yPQ' value='' ng-model='passcode')
         button.btn.btn-primary(ng-click='submitPass()') Submit Passcode
         br
+        button.btn.btn-primary(ng-click='crawlingAmazon()') Crawling Amazon
+        &emsp;
+        button.btn.btn-primary(ng-click='stopAmazon()') Stop Amazon
+        br
         br
       br
       div(ng-if='crawlingButton')

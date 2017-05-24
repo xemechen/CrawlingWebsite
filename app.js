@@ -181,6 +181,7 @@ app.post('/crawlingAmazon', function(req, res) {
     if(checkingConnection(req)){
         if(amazonCrawlingFlag){
             pageGetter.selectComponent(1);
+            pageGetter.setDelaySeconds(300000);
             console.log("Start watching Amazon item");
             var emailReceivers = req.body['emails[]'];
             console.log("Receivers: " + emailReceivers);
@@ -195,6 +196,21 @@ app.post('/crawlingAmazon', function(req, res) {
         }   
         res.writeHead(200, { 'Content-Type' : 'application/json' });
                     "Crawling Amazon..."
+        res.end('[]');
+    }else{
+        res.writeHead(404, { 'Content-Type' : 'application/json' });
+        res.end('[]');
+    }
+});
+
+app.post('/stopAmazon', function(req, res) { 
+    if(checkingConnection(req)){
+        console.log("Stop the grabbing interval");
+        // stop the function to crawl
+        crawlingFlag = false;
+        pageGetter.stopGrabbing();   
+        res.writeHead(200, { 'Content-Type' : 'application/json' });
+                    "Crawling stopped..."
         res.end('[]');
     }else{
         res.writeHead(404, { 'Content-Type' : 'application/json' });

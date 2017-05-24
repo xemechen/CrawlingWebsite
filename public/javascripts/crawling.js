@@ -176,6 +176,27 @@ app.controller("retrievingCtrl", function($scope) {
 		});	
 	}
 
+	$scope.stopAmazon = function(){
+		crawlingFlag = false;
+		prf("Calling server to stop crawling");
+		$scope.crawlingStatus = false;
+	    $.ajax({
+	        type: 'POST',
+	        url: 'http://'+connectionDomain+'/stopAmazon',
+	        data: {'passcode': $scope.passcode.trim()},
+	        success: function(){
+	        	crawlingFlag = true;
+	        	$scope.crawlingStatus = false;
+	        	$scope.$apply();
+	        },
+	        error: function(){
+	        	crawlingFlag = false; 
+	        	$scope.crawlingStatus = false;
+	        	$scope.$apply();
+	        }
+	    });
+	}
+
 	// $scope.checkPass = function(){
 	// 	$.ajax({
 	// 	    type: 'GET',

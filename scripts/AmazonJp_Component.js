@@ -1,5 +1,7 @@
 var title = 'AmazonJP',
-	url = 'https://www.amazon.co.jp/gp/offer-listing/B01NAU8B71/',
+	// url = 'https://www.amazon.co.jp/gp/offer-listing/B01NAU8B71/',
+	url = 'https://www.amazon.co.jp/gp/offer-listing/B01NBWQWTF/ref=olp_twister_all?ie=UTF8&mv_color_name=all&mv_size_name=all&mv_style_name=all',
+	// url = 'https://www.amazon.co.jp/gp/offer-listing/B01N12HJHQ/ref=dp_olp_new?ie=UTF8&condition=new',
 	fileName = "amazon_result",
 	optionFileName = "amazon_options",
 	selectorList = ["#RegioDropDown",
@@ -57,68 +59,18 @@ var compareTwoObject = function(oldO, newO){
 
 var previousReturnList = [];
 var firstTimeFlag = true;
-this.dataChecker = function(newList){
-    var HouseLinks = [];
-    
-    // Checking for the first time
-    if(firstTimeFlag){     
-        console.log("Checking for the first time");
-        firstTimeFlag = false;
-        previousReturnList = newList;
-        return [false, HouseLinks];
-    }
-    
-    // console.log("Checking for updated housing");
-    // if(previousReturnList == null || previousReturnList.length == 0){
-    //     previousReturnList = newList;
-    //     return [false, HouseLinks];
-    // }
-
-    // checking after first time    
-    
-    var previousSummary = calculateSummary(previousReturnList);
-    var newSummary = calculateSummary(newList);
-
-    var updatedTypeList = compareTwoObject(previousSummary, newSummary);
-    console.log(updatedTypeList);
-
-    for(var index = 0; index < newList.length; index++){
-        var houseItem = newList[index];
-        if(updatedTypeList.indexOf(houseItem.Type) > -1){
-            HouseLinks.push(new Housing(houseItem.Type, houseItem.Price, houseItem.link, houseItem.Available));
-        }
-    }
-
-    previousReturnList = newList;
-    if(HouseLinks.length > 0){
-        return [true, HouseLinks, JSON.stringify(updatedTypeList)];
+this.dataChecker = function(newList){   
+    if(newList.length > 0 && newList[0] > 0){
+        return [true, {}, ""];
     }else{
-        return [false, HouseLinks];
+        return [false, {}];
     }   
     
 }
 
-this.emailSubject = "SSH Housing alert! ";
-this.emailContentBuilder = function(Housings){
-	var text = "New room(s) available, please click the following link(s) to check. <br/>";
-    if(Housings != null && Housings.length > 0){
-        for(var k = 0; k < Housings.length; k++){
-            var housingObj = Housings[k];
-            var link = housingObj.href;
-            var price = housingObj.price;
-            var name = housingObj.name;
-            // var availNumber = parseInt(housingObj.available);
-            var linkText = "<a href='" + link + "' target='_blank'> " + name + "(" + housingObj.available + ") with Price: " + price + "</a>"
-            if(text == null || text.trim().length == 0){
-                text = linkText;
-            }else{
-                text = text + "<br/>" + linkText;
-            }
-        }        
-        return text;
-    }
-
-    return "";
+this.emailSubject = "Amazon Available alert! ";
+this.emailContentBuilder = function(objectData){	
+    return "Available items found!!! <br/> <a href='" + url + "'>Link</a>";
 }
 
 this.getPageOptions = function(sitepage, fs, callbackFn){
@@ -203,15 +155,36 @@ this.pageOperations = function(phInstanceParam, sitepage, dataPackage, waitFour,
                 // var event = document.createEvent("UIEvents"); // or "HTMLEvents"
                 // event.initUIEvent("click", true, true);
                 // target[0].dispatchEvent(event);
-                var target2 = document.querySelectorAll("#olpOfferList div.a-row"); // index 0 is the title row
+                var target2 = document.querySelectorAll("#olpOfferList div.a-row"); // index 0 is the title row, 
+                																	// rest: two elements for one item
+
+				var targetSeller = document.querySelectorAll("#olpOfferList div.a-row .olpSellerName > img");
+				if(targetSeller.length > 0){
+					var altName = targetSeller[0].getAttribute('alt');
+					if(altName == 'Amazon.co.jp'){
+						return "success";
+					}
+				}
                 
-                return 'Test ' + target2.length;
+                return 'Test ' + targetSeller.length;
         	}catch(err){
         		return "Error: " + err;
         	}
         }).then(function(processOutput){
         	if(processOutput != null && processOutput.length > 0){
-        		console.log("Operation error: " + processOutput);
+        		if(processOutput == "success"){        			
+        			callback("[1]");	
+            	}else{
+            		console.log("Nothing found...");
+            	}                            
+                phInstance.exit();
+
+                timeOutList = [];
+                console.log("Next crawling in: " + delayMilSec + " ms");
+                var finalTO = setTimeout(function(){
+                	callback2();
+                }, delayMilSec);
+                timeOutList.push(finalTO);
         	}                        	
         });
     };

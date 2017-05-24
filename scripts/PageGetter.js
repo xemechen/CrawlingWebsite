@@ -160,6 +160,7 @@ var getPage = function(url, dataPackage, callback, callback2) {
                 });				
 			};
 
+			console.log("Connect to: " + url);
             sitepage.open(url).then(function(status){
                 console.log("Connection: " + status);
                 if (status !== "success") {
