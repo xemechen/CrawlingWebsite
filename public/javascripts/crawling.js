@@ -10,6 +10,7 @@ app.controller("retrievingCtrl", function($scope) {
 
 	$scope.select = {};	
 	$scope.passcode = "";
+	$scope.pagelink = "https://www.amazon.co.jp/gp/offer-listing/B01NBWQWTF/ref=olp_twister_all?ie=UTF8&mv_color_name=all&mv_size_name=all&mv_style_name=all";
 	$scope.updatingOptions = false;
 	$scope.crawlingStatus = false;
 	$scope.gettingJson = false;
@@ -160,10 +161,12 @@ app.controller("retrievingCtrl", function($scope) {
 		}
 		prf(receivers);
 
+
 		var dataObj = {
 			'emails': receivers, 
 			'ProcessTime': new Date(),
-			'passcode': $scope.passcode.trim()
+			'passcode': $scope.passcode.trim(),
+			'pagelink': $(".input-pagelink").val().trim()
 		};
 
 		$.ajax({

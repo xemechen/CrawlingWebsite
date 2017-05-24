@@ -12,11 +12,7 @@ block content
         br
         input.form-control(type='text', placeholder='e.g., 9dx^8yPQ' value='' ng-model='passcode')
         button.btn.btn-primary(ng-click='submitPass()') Submit Passcode
-        br
-        button.btn.btn-primary(ng-click='crawlingAmazon()') Crawling Amazon
-        &emsp;
-        button.btn.btn-primary(ng-click='stopAmazon()') Stop Amazon
-        br
+        br        
         br
       br
       div(ng-if='crawlingButton')
@@ -81,7 +77,12 @@ block content
         img(ng-if="crawlingStatus" src="loading-animal.gif")
         span(ng-if="crawlingStatus") Crawling...
         br
-        button.btn.btn-primary(ng-click='crawlingAmazon()') Crawling Amazon            
+        br
+        input.form-control.input-pagelink(type='text', placeholder='e.g., donk@ddbox.com' ng-model='pagelink')
+        br
+        button.btn.btn-primary(ng-click='crawlingAmazon()') Crawling Amazon
+        &emsp;
+        button.btn.btn-primary(ng-click='stopAmazon()') Stop Amazon           
         br
         br
       button.btn.btn-info(ng-click="getJson()") Start watching JSON Data

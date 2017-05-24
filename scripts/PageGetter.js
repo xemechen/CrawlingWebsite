@@ -280,6 +280,12 @@ var setDelaySeconds = function(param){
 	delayMilSec = param;
 }
 
+var setUrl = function(param){
+	console.log('Set new url: ' + param);
+	currentComponent.setUrl(param);
+	currentComponent.url = param;
+}
+
 var selectComponent = function(index){
 	currentComponent = allComponents[index];
 	console.log('Component selected: ' + currentComponent.title);
@@ -287,6 +293,7 @@ var selectComponent = function(index){
 
 /* ===== for crawling functions ===== */
 
+module.exports.setUrl = setUrl;
 module.exports.intervalGrabbing = intervalGrabbing;
 module.exports.stopGrabbing = stopGrabbing;
 module.exports.setPassword = setPassword;

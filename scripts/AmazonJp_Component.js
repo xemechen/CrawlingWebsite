@@ -212,4 +212,8 @@ this.stopPhantom = function(){
     }
 }
 
+this.setUrl = function(urlParam){
+	url = urlParam;
+}
+
 module.exports = this;

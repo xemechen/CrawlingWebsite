@@ -184,6 +184,8 @@ app.post('/crawlingAmazon', function(req, res) {
             pageGetter.setDelaySeconds(300000);
             console.log("Start watching Amazon item");
             var emailReceivers = req.body['emails[]'];
+            var targetUrl = req.body['pagelink'];
+            pageGetter.setUrl(targetUrl);
             console.log("Receivers: " + emailReceivers);
             console.log(req.body.ProcessTime);
             // start the function to crawl
